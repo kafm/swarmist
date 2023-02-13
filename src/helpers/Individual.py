@@ -1,10 +1,9 @@
 from __future__ import annotations
-from abc import ABC
 from typing import List
 from .Env import FitnessFunction, Bounds
 import numpy as np
 
-class Individual(ABC): 
+class Individual: 
     def __init__(
         self,
         fitnessFunction: FitnessFunction,
@@ -23,15 +22,19 @@ class Neighborhood:
     def __init__(self, index: int):
         self.individuals: List[Individual] = []
         self.nbest = None
+        self.nworse = None
         self.index = index
 
     def append(self, individual: Individual):
         self.individuals.append(individual)
         if self.nbest == None or self.nbest.fitness > individual.fitness:
             self.nbest = individual
+        if self.nworse == None or self.nworse.fitness < individual.fitness:
+            self.nworse = individual
 
-    def resolveBest(self):
+    def resolveRank(self):
        self.nbest = min(self.individuals, key = lambda p : p.fitness)
+       self.nworse = max(self.individuals, key = lambda p : p.fitness)
 
     def getRandomIndividuals(self, k: int=1, excludeIndexes: List[int] = None, replace:bool=False)->List[Individual]:
         inds:List[Individual] = self.individuals if not excludeIndexes else [
@@ -47,3 +50,6 @@ class Neighborhood:
 
     def best(self)->Individual:
         return self.nbest
+
+    def worse(self)->Individual:
+        return self.nworse

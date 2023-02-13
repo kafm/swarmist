@@ -2,7 +2,7 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algos.DE import DE
+from algos.JAYA import JAYA as algo
 #from algos.BB import BB
 #from algos.FIPS import FIPS
 
@@ -32,20 +32,17 @@ def michalewicz(x, m=10): # (michalewicz, Bounds(min=0, max=np.pi))
     return - sum(np.sin(x) * (np.sin(ii*x**2/np.pi))**(2*m))
 
 func, bounds = (sphere, Bounds(min=-5.12, max=5.12))
-res: SearchResult = DE(
+res: SearchResult = algo(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
     populationSize = populationSize,
-    x = "rand",
-    y = 1,
-    z = "bin",
     maxGenerations = numGenerations,
     maxEvaluations = maxEvaluations,
     minFitness = minFitness
 )
 
-print("DE->Sphere: ", res.best.fitness)
+print("Sphere: ", res.best.fitness)
 plt.figure("Sphere")
 plt.plot(res.fitnessByGeneration)
 plt.show()

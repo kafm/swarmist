@@ -24,7 +24,7 @@ class Population:
         previousN: Neighborhood = None
         for n in self.neighborhood: 
             if previousN == None or previousN.index != n.index:
-                n.resolveBest()
+                n.resolveRank()
             nBest = n.best()
             if minFit > nBest.fitness:
                 best = nBest
