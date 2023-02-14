@@ -65,14 +65,10 @@ class ProbabilityFilterInterator(PopulationIterator):
         self.p = p
 
     def hasNext(self)->bool:
-        if np.random.uniform() < self.p:
-            return True
-        newIndex = self.index+1
-        if newIndex < self.length:
-            self.index = newIndex
-            return self.hasNext()
+        if self.index < self.length:
+            if np.random.uniform() < self.p:
+                return True
+            elif self.index < self.length-1:
+                self.index += 1
+                return self.hasNext()
         return False
-             
-
-    def next(self)->Tuple[Individual, Neighborhood]:
-        return (self.individuals[self.index], self.neighborhood[self.index])
