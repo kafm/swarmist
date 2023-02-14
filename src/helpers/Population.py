@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional
+from typing import Callable, List, Tuple, Optional, cast
 from .Individual import Individual, Neighborhood
 from .Topology import buildTopology
+import numpy as np
 import sys
 
 class Population: 
@@ -30,13 +31,16 @@ class Population:
                 best = nBest
         return best
 
+    def filterByPropability(self, p: float)->PopulationIterator:
+        return ProbabilityFilterInterator(self.individuals, self.neighborhood, p)
+
     def iterator(self)->PopulationIterator:
         return PopulationIterator(self.individuals, self.neighborhood)
 
 class PopulationIterator: 
     def __init__(self,
         individuals: List[Individual],
-        neighborhood: List[Neighborhood]
+        neighborhood: List[Neighborhood],
     ):
         self.individuals: List[Individual] = individuals
         self.neighborhood: List[Neighborhood] = neighborhood
@@ -50,3 +54,25 @@ class PopulationIterator:
         i = self.index 
         self.index += 1
         return (self.individuals[i], self.neighborhood[i])
+
+class ProbabilityFilterInterator(PopulationIterator): 
+    def __init__(self,
+        individuals: List[Individual],
+        neighborhood: List[Neighborhood],
+        p: float
+    ):
+        super().__init__(individuals, neighborhood)
+        self.p = p
+
+    def hasNext(self)->bool:
+        if np.random.uniform() < self.p:
+            return True
+        newIndex = self.index+1
+        if newIndex < self.length:
+            self.index = newIndex
+            return self.hasNext()
+        return False
+             
+
+    def next(self)->Tuple[Individual, Neighborhood]:
+        return (self.individuals[self.index], self.neighborhood[self.index])

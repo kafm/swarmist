@@ -45,7 +45,7 @@ def FF(
         neighborhoodRange=neighborhoodRange
     )
   
-    return search(env, population, lambda p, n: fireflyUpdate(p, n, beta, gamma, delta))
+    return search(env, population, lambda ff, n: fireflyUpdate(ff, n, beta, gamma, delta))
 
 
 def search(env: Env, population: Population, updateMethod: Callable[[Firefly, Neighborhood]]) -> SearchResult[Firefly]:
