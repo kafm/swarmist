@@ -50,8 +50,8 @@ def search(env: Env, population: Population,  alpha: float, mu: float, pa: float
         fitnessByGeneration: List[float] = []
         while (env.next()):
             cuckooGlobalSearch(population, alpha, mu)
-            best = cuckooLocalSearch(population, pa)
-            fitnessByGeneration.append(best.fitness)
+            cuckooLocalSearch(population, pa)
+            fitnessByGeneration.append(population.best().fitness)
     except MaxEvaluationReached:
         None
     except MinFitnessReached:
@@ -62,30 +62,32 @@ def search(env: Env, population: Population,  alpha: float, mu: float, pa: float
         fitnessByGeneration=fitnessByGeneration
     )
 
-def cuckooGlobalSearch(population: Population,  alpha: float, mu: float)->Individual:
+def cuckooGlobalSearch(population: Population,  alpha: float, mu: float):
     iter: PopulationIterator[Cuckoo] = population.iterator()
     while (iter.hasNext()):
         cuckoo, neighbors = cast(Tuple[Cuckoo, Neighborhood], iter.next())
-        pos = cuckoo.pos + alpha * levyFlight(mu, cuckoo.ndims) * np.subtract(cuckoo.pos, neighbors.best().pos) 
+        pos = np.clip(
+            cuckoo.pos + alpha * levyFlight(mu, cuckoo.ndims) * np.subtract(cuckoo.pos, neighbors.best().pos), 
+            cuckoo.bounds.min, 
+            cuckoo.bounds.max
+        )
         fit = cuckoo.fitnessFunction(pos)
         nest = neighbors.getRandomIndividual(excludeIndexes=[cuckoo.index])
         if fit < nest.fitness:
             nest.fitness = fit
             nest.pos = pos
-    return population.best()
     
-
-
-def cuckooLocalSearch(population: Population,  pa: float)->Individual:
+def cuckooLocalSearch(population: Population,  pa: float):
     iter: PopulationIterator[Cuckoo] = population.filterByPropability(pa)
     while (iter.hasNext()):
         cuckoo, neighbors = cast(Tuple[Cuckoo, Neighborhood], iter.next())
         a, b = neighbors.getRandomIndividuals(k=2, excludeIndexes=[cuckoo.index])
         cuckoo.pos = np.clip(
             cuckoo.pos + ( np.random.rand(cuckoo.ndims) * np.subtract(a.pos, b.pos)), 
-            cuckoo.bounds.min, cuckoo.bounds.max)
+            cuckoo.bounds.min, 
+            cuckoo.bounds.max
+        )
         cuckoo.fitness = cuckoo.fitnessFunction(cuckoo.pos)
-    return population.best()
        
 def levyFlight(mean, ndims):
     beta = mean if mean > 1 else 1

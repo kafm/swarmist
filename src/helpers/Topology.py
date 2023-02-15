@@ -15,6 +15,7 @@ def GBEST(individuals: List[Individual])->List[Neighborhood]:
     for i in individuals: 
         neighborhood.append(i)
         topology.append(neighborhood)
+    neighborhood.resolveRank()
     return topology
 
 def LBEST(individuals: List[Individual], k:int=2)->List[Neighborhood]:
@@ -25,6 +26,7 @@ def LBEST(individuals: List[Individual], k:int=2)->List[Neighborhood]:
         for j in range(k):
             neighborhood.append(individuals[(i + j) % n])
             neighborhood.append(individuals[(i - j) % n])
+        neighborhood.resolveRank()
         topology.append(neighborhood)
     return topology
 

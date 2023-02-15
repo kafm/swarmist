@@ -12,29 +12,28 @@ class Individual:
     ):
         self.bounds = bounds
         self.ndims = numDimensions
-        self.pos = np.random.uniform(low=bounds.min, high=bounds.max, size=numDimensions)
         self.bounds: Bounds = bounds
+        self.fitnessFunction = fitnessFunction
+        self.pos = np.random.uniform(low=bounds.min, high=bounds.max, size=numDimensions)
         self.best = self.pos
         self.fitnessFunction = fitnessFunction
         self.fitness = fitnessFunction(self.pos)
+       
+
 
 class Neighborhood: 
     def __init__(self, index: int):
         self.individuals: List[Individual] = []
-        self.nbest = None
-        self.nworse = None
-        self.index = index
+        self.rank: List[Individual] = []
+        self.index:int = index
 
     def append(self, individual: Individual):
         self.individuals.append(individual)
-        if self.nbest == None or self.nbest.fitness > individual.fitness:
-            self.nbest = individual
-        if self.nworse == None or self.nworse.fitness < individual.fitness:
-            self.nworse = individual
 
     def resolveRank(self):
-       self.nbest = min(self.individuals, key = lambda p : p.fitness)
-       self.nworse = max(self.individuals, key = lambda p : p.fitness)
+       #self. np.array([(1, 0), (0, 1)], dtype=[('x', '<i4'), ('y', '<i4')])
+       self.nbest = min(self.individuals, key = lambda i : i.fitness)
+       self.nworse = max(self.individuals, key = lambda i : i.fitness)
 
     def getRandomIndividuals(self, k: int=1, excludeIndexes: List[int] = None, replace:bool=False)->List[Individual]:
         inds:List[Individual] = self.individuals if not excludeIndexes else [
