@@ -52,3 +52,9 @@ class Neighborhood:
 
     def worse(self)->Individual:
         return self.nworse
+    
+    def meanPos(self)->List[float]:
+        n = len(self.individuals)
+        s = sum([i.pos for i in self.individuals])
+        return np.divide(s,n)
+        
