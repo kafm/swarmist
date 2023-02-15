@@ -2,7 +2,7 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 
-from algos.ABC import ABC as algo
+from algos.SCA import SCA as algo
 #from algos.BB import BB
 #from algos.FIPS import FIPS
 
