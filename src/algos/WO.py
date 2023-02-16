@@ -1,7 +1,6 @@
 from __future__ import annotations
 from typing import Optional, List, Tuple, cast
 import numpy as np
-import copy
 from helpers.Env import *
 from helpers.Population import Neighborhood, Population, Individual, PopulationIterator
 
