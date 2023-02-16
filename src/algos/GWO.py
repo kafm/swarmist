@@ -18,7 +18,7 @@ def GWO(
     minFitness: Optional[float] = None,
 ) -> SearchResult[Individual]:
     """
-    Grey Wolf Optimizer on implementation proposed by Mirjalili, Mohammad Mirjalili and Lewis [1].
+    Grey Wolf Optimizer implementation proposed by Mirjalili, Mohammad Mirjalili and Lewis [1].
 
     [1] https://www.sciencedirect.com/science/article/pii/S0965997813001853
     """
