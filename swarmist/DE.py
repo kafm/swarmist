@@ -1,9 +1,10 @@
 from __future__ import annotations
-from typing import Optional, List,  Tuple, cast, Any
+from typing import Optional, List,  Tuple, cast, Any, Callable
 import numpy as np
 
-from helpers.Env import *
-from helpers.Population import Neighborhood, Population, Individual, PopulationIterator
+from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult
+from .helpers.Population import Population, PopulationIterator
+from .helpers.Individual import Neighborhood, Individual
 
 def DE(
     fitnessFunction: FitnessFunction,
