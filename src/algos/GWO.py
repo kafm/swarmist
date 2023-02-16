@@ -1,12 +1,12 @@
 from __future__ import annotations
 from typing import Optional, List, Tuple, cast
 import numpy as np
-
+import copy
 from helpers.Env import *
 from helpers.Population import Neighborhood, Population, Individual, PopulationIterator
 
 
-def SCA(
+def GWO(
     fitnessFunction: FitnessFunction,
     bounds: Bounds,
     numDimensions: int = 2,
@@ -18,9 +18,9 @@ def SCA(
     minFitness: Optional[float] = None,
 ) -> SearchResult[Individual]:
     """
-    Sine Cosine algorithm implementation proposed by Mirjalili [1].
+    Grey Wolf Optimizer on implementation proposed by Mirjalili, Mohammad Mirjalili and Lewis [1].
 
-    [1] https://www.sciencedirect.com/science/article/pii/S0950705115005043
+    [1] https://www.sciencedirect.com/science/article/pii/S0965997813001853
     """
     env: Env = Env(
         fitnessFunction=fitnessFunction,
@@ -28,12 +28,12 @@ def SCA(
         maxEvaluations=maxEvaluations,
         minFitness=minFitness
     )
-    agents: List[Individual] = [Individual(
+    individuals: List[Individual] = [Individual(
         fitnessFunction=env.evaluate,
         bounds=bounds,
-        numDimensions=numDimensions) for _ in range(populationSize)]
+        numDimensions=numDimensions) for i in range(populationSize)]
     population: Population = Population(
-        individuals=agents,
+        individuals=individuals,
         topology=topology,
         neighborhoodRange=neighborhoodRange
     )
@@ -41,15 +41,15 @@ def SCA(
     return search(env, population)
 
 
-def search(env: Env, population: Population, a: int=2) -> SearchResult[Individual]:
+def search(env: Env, population: Population) -> SearchResult[Individual]:
     try:
         fitnessByGeneration: List[float] = []
         while (env.next()):
             iter: PopulationIterator[Individual] = population.iterator()
-            r1 = a - env.currGen * ((a) / env.maxGenerations) 
+            a = 2 - env.currGen * (2 / env.maxGenerations) 
             while (iter.hasNext()):
                 individual, neighbors = cast(Tuple[Individual, Neighborhood], iter.next())
-                scUpdate(individual, neighbors.best(), r1)
+                gwoUpdate(individual, neighbors, a)
             fitnessByGeneration.append(population.best().fitness)
     except MaxEvaluationReached:
         None
@@ -61,21 +61,19 @@ def search(env: Env, population: Population, a: int=2) -> SearchResult[Individua
         fitnessByGeneration=fitnessByGeneration
     )
 
-def scUpdate(a: Individual, best: Individual, r1: float):
-    r2 = np.random.uniform(low=0, high=2*np.pi, size=a.ndims)
-    r3 = np.random.uniform(low=-2, high=2, size=a.ndims)
-    r4 = np.random.uniform(size=a.ndims)
-    pos = np.copy(a.pos)
-    for i in range(a.ndims): 
-        sc = np.sin(r2[i]) if r4[i] < .5 else np.cos(r2[i])
-        pos[i] += ( 
-            r1 * 
-            sc * 
-            abs(r3[i] * best.pos[i] - pos[i]) 
-        )
-    pos = np.clip(pos, a.bounds.min, a.bounds.max)
-    fit = a.fitnessFunction(pos)
-    if fit < a.fitness:
-        a.pos = pos
-        a.fitness = fit
- 
+def gwoUpdate(w: Individual, neighbors: Neighborhood, a: float=2):
+    A1, A2, A3 = 2 * a * np.random.random() - a, 2 * a * np.random.random() - a, 2 * a * np.random.random() - a
+    C1, C2, C3 = 2 * np.random.random(), 2 * np.random.random(), 2 * np.random.random()
+    X1, X2, X3 = np.zeros(w.ndims), np.zeros(w.ndims), np.zeros(w.ndims)
+    alpha, beta, gamma = copy.copy(neighbors.rank[:3])
+    pos = np.zeros(w.ndims)
+    for j in range(w.ndims):
+        X1[j] = alpha.pos[j] - A1 * abs(C1 * alpha.pos[j] - w.pos[j])
+        X2[j] = beta.pos[j] - A2 * abs(C2 *  beta.pos[j] - w.pos[j])
+        X3[j] = gamma.pos[j] - A3 * abs(C3 * gamma.pos[j] - w.pos[j])
+        pos[j] = (X1[j] + X2[j] + X3[j])/3
+    pos = np.clip(pos, w.bounds.min, w.bounds.max)
+    fit = w.fitnessFunction(pos)
+    if fit < w.fitness:
+        w.pos = pos
+        w.fitness = fit

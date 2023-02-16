@@ -31,9 +31,7 @@ class Neighborhood:
         self.individuals.append(individual)
 
     def resolveRank(self):
-       #self. np.array([(1, 0), (0, 1)], dtype=[('x', '<i4'), ('y', '<i4')])
-       self.nbest = min(self.individuals, key = lambda i : i.fitness)
-       self.nworse = max(self.individuals, key = lambda i : i.fitness)
+       self.rank = sorted(self.individuals, key = lambda i: i.fitness)
 
     def getRandomIndividuals(self, k: int=1, excludeIndexes: List[int] = None, replace:bool=False)->List[Individual]:
         inds:List[Individual] = self.individuals if not excludeIndexes else [
@@ -48,10 +46,10 @@ class Neighborhood:
         return self.getRandomIndividual(excludeIndexes=excludeIndexes)
 
     def best(self)->Individual:
-        return self.nbest
+        return self.rank[0]
 
     def worse(self)->Individual:
-        return self.nworse
+        return self.rank[-1]
     
     def meanPos(self)->List[float]:
         n = len(self.individuals)
