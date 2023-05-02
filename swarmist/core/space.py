@@ -1,11 +1,8 @@
 from __future__ import annotations
-from typing import Callable, List, Any, Optional
-from dataclasses import dataclass
-from pymonad.either import Left, Right, Either
-import numpy as np
-import sys
-from Helpers import try_catch, assert_not_null, assert_at_least, assert_function_signature
-from Dictionary import FitnessFunction, FitnessFunctionDef, Bounds, ConstraintsChecker, SearchSpace
+from typing import Callable, List
+from pymonad.either import Either
+from .errors import try_catch, assert_not_null, assert_at_least, assert_function_signature
+from .dictionary import FitnessFunction, FitnessFunctionDef, Bounds, ConstraintsChecker, SearchSpace
 
 def dimensions(size: int)->Callable[..., int]:
     def callback():

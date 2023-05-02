@@ -1,19 +1,27 @@
-import random
-from oslash import Left, Right
+import numpy as np
+from core import *
 
-def rand(max_evals): 
-  def iter_helper():
-    curr_evals = 0
-    while True:
-        curr_evals += 1
-        if not curr_evals or curr_evals > max_evals:
-            raise Exception("Finished")
-        yield (curr_evals,random.randint(1,101))
-  iter = iter_helper() 
-  return lambda: next(iter)
-    
-
-
-g = rand(9)
-for _ in range(10):
-    print(g())
+search(
+    space(
+        dimensions(30),
+        bounded(10, 20),
+        constrained_by(lambda pos: pos),
+        minimize(lambda x: x**2)
+    ),
+    until(
+        max_evals=50000
+    ),
+    using(
+        size(40),
+        init(lambda ctx: [np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.evaluate)]),
+        None,
+        parameters(
+            ("self_confidence", 2.05)
+        ),
+        update(
+            lambda ctx: None,
+            select(all()),
+            where(lambda a: a.improved)
+        )
+    )
+)

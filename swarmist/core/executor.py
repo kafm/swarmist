@@ -1,11 +1,10 @@
 from __future__ import annotations
 from typing import Optional
 from pymonad.either import Right, Either
-from Dictionary import *
-from Helpers import try_catch
-from Exceptions import SearchEnded
-import numpy as np
 import sys
+import numpy as np
+from .dictionary import *
+from .errors import SearchEnded, try_catch
 
 class SearchExecutor:
     def __init__(self, 
@@ -13,6 +12,7 @@ class SearchExecutor:
         ndims: int, 
         bounds: Bounds,
         constraints: Optional[ConstraintsChecker],
+        params: Optional[Parameters],
         max_gen: Optional[int],
         min_fit: Optional[float], 
         max_evals:  Optional[int],
@@ -21,7 +21,8 @@ class SearchExecutor:
              self.evaluate, 
              self.clip,
              ndims, 
-             bounds
+             bounds,
+             params
         )
         self.fit_func = fit_func.func
         self.constraints = constraints
@@ -30,7 +31,9 @@ class SearchExecutor:
         self.max_gen = max_gen
         self.curr_fit = sys.float_info.max
         self.curr_eval = 0
-        self.curr_gen = 0
+        self.curr_gen = -1
+        self._evals_by_gen = []
+        self.error = None
 
     def context(self)->SearchContext:
         return self.ctx
@@ -45,7 +48,9 @@ class SearchExecutor:
         self._assert_max_evals()
         self._assert_min_fit()
         fit = self.fit_func(pos)
-        self.curr_fit = min(fit, self.curr_fit)
+        if fit < self.curr_fit:
+            self.curr_fit = fit
+            self._evals_by_gen[self.curr_gen] = Evaluation(pos, fit)
         self.curr_eval += 1
         return fit 
 
@@ -53,11 +58,14 @@ class SearchExecutor:
         res = try_catch(self._assert_max_gen)
         if res.is_right:
             self.curr_gen += 1
+            self._evals_by_gen.append(None)
             return Right(self.curr_gen)
+        else:
+            self.error =  res.either(lambda e: e)
         return res
 
-    def results(self)->SearchResults:
-        pass
+    def results(self)->List[Evaluation]:
+        return self._evals_by_gen
     
     def _assert_max_evals(self):
         if self.max_evals and self.curr_eval >= self.max_evals:

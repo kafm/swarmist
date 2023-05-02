@@ -1,20 +1,17 @@
 from __future__ import annotations
-from typing import Callable, Dict, Optional, List, Union, TypeVar
-from dataclasses import dataclass, field
-from oslash import Either, Maybe, Nothing
+from typing import Callable, Dict, Optional, List, TypeVar, Tuple
+from dataclasses import dataclass
 
-T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")
 
 KeyValue = Dict[K, V]
 
 Pos = List[float]
-#Size = Either[int, Exception]
-
-### SEARCH SPACE ###
+Fit = float
 
 FitnessFunction = Callable[[Pos],float]
+ConstraintsChecker = Callable[[Pos], Pos]
 
 @dataclass(frozen=True)
 class FitnessFunctionDef:
@@ -26,34 +23,27 @@ class Bounds:
     min: float
     max: float
 
-@dataclass(frozen=True) 
+@dataclass(frozen=True)
 class Evaluation:
     pos: Pos
-    fit: float
-
-@dataclass(frozen=True) 
-class Evaluation:
-    pos: Pos
-    fit: float
-
-ConstraintsChecker = Callable[[Pos], Pos]
+    fit: Fit
 
 @dataclass(frozen=True)
 class SearchSpace:
-    fit_func: FitnessFunctionDef
+    fit_func_def: FitnessFunctionDef
     ndims: int
     bounds: Bounds
     constraints: ConstraintsChecker
 
-#SEARCH
-
-Evaluator = Callable[[Pos],Either[Evaluation, Exception]]
-
 @dataclass(frozen=True)
 class StopCondition:
-    fit: float
+    fit: Fit
     max_evals: int
     max_gen: int
+    
+ParameterValue = int | float | Callable
+Parameter = Tuple[str, ParameterValue]
+Parameters = KeyValue[str, Callable[..., ParameterValue]]
 
 @dataclass(frozen=True)
 class SearchContext:
@@ -61,24 +51,7 @@ class SearchContext:
     clip: Pos
     ndims: int
     bounds: Bounds
-
-@dataclass(frozen=True)
-class SearchRequest:
-    strategy: SearchStrategy
-    space: SearchSpace
-    until: StopCondition
-
-@dataclass(frozen=True)
-class SearchResults:
-    results: List[Evaluation]
-    error: Exception
-
-### SEARCH STRATEGY ###
-
-Fit = float
-Fits = List[Fit]
-Prob = float
-Probs = List[Prob]
+    parameters: Parameters
 
 @dataclass(frozen=True)
 class Agent: 
@@ -89,40 +62,42 @@ class Agent:
     trials: int
     improved: bool
 
-A = TypeVar('A', bound=Agent)
-
-AgentList = List[A]
-AgentMatrix = List[AgentList]
+AgentList = List[Agent]
+OneOrMoreAgents = Agent | AgentList
+T = TypeVar("T")
 
 @dataclass(frozen=True)
 class GroupInfo: 
     all: Callable[[], AgentList] 
     size: Callable[[], int]
-    fits: Fits
-    probs: Probs
-    best: Callable[[Optional[int]], A]
-    worse: Callable[[Optional[int]], A]
-    filter: Callable[[Callable[[A,Optional[int]], bool]], AgentList]
-    pick_random: Callable[[Optional[int]], Union[A, AgentList]]
-    pick_roulette: Callable[[Optional[int]], Union[A, AgentList]]
-    map: Callable[[A], T]
-    reduce: Callable[[A], T]
+    fits: List[Fit]
+    probs: List[float]
+    best: Callable[[Optional[int]], Agent]
+    worse: Callable[[Optional[int]], Agent]
+    filter: Callable[[Callable[[Agent,Optional[int]], bool]], AgentList]
+    pick_random: Callable[[Optional[int]], OneOrMoreAgents]
+    pick_roulette: Callable[[Optional[int]], OneOrMoreAgents]
+    map: Callable[[Agent], T]
+    reduce: Callable[[Agent], T]
 
 @dataclass(frozen=True)
 class AgentGroup:
     agents: AgentList
-    rank: Callable([], GroupInfo)
+    rank: Callable(..., GroupInfo)
+
+@dataclass(frozen=True)
+class PopulationInfo:
+    info: GroupInfo
+    group_info: List[GroupInfo]
 
 @dataclass(frozen=True)
 class Population:
     agents: AgentList
-    groups: List[AgentGroup]
     size: int
-    rank: Callable([], GroupInfo)
+    rank: Callable[..., PopulationInfo]
 
-
-InitializationMethod = Callable[[int, SearchContext], AgentList]
-StaticTopology = AgentMatrix
+InitializationMethod = Callable[[SearchContext], AgentList]
+StaticTopology = List[List[int]]
 DynamicTopology =  Callable[[Optional[AgentList], Optional[StaticTopology]], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
@@ -133,31 +108,45 @@ class Init:
     method: InitializationMethod
     topology: Topology
 
-SelectionMethod = Callable[[GroupInfo], AgentList]
-UpdateCondition = Maybe[Callable[[Agent], bool]]
-
 @dataclass(frozen=True)
 class UpdateContext:
     agent: Agent
     info: GroupInfo
-    parameters: Dict
-    condition: UpdateCondition = Nothing()
-    apply: Callable([Agent], Agent)
+    parameters: Parameters
 
+SelectionMethod = Callable[[GroupInfo], AgentList]
+UpdateCondition = Callable[[UpdateContext], bool]
 UpdateMethod = Callable[[UpdateContext], Agent]
-Limit = int
 Condition = Callable[[Agent], bool]
-Conditions = List[Condition]
 
 @dataclass(frozen=True)
 class Update:
     method: UpdateMethod
     selection: SelectionMethod
-    where: Conditions = None
-    limit: Limit = None
+    where: Condition
+    limit: int
 
 @dataclass(frozen=True)
 class SearchStrategy:
     initialization: Init
     update_pipeline: List[Update]
+    parameters: Parameters
 
+@dataclass(frozen=True)
+class SearchRequest:
+    strategy: SearchStrategy
+    space: SearchSpace
+    until: StopCondition
+
+@dataclass(frozen=True)
+class SearchSucceed:
+    best: Callable[..., Evaluation]
+    last: Callable[..., Evaluation]
+    results: List[Evaluation]
+
+@dataclass(frozen=True)
+class SearchFailed:
+    error: Exception
+
+
+SearchResults = SearchSucceed | SearchFailed

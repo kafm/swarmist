@@ -1,14 +1,9 @@
 from __future__ import annotations
-from typing import List, Optional, Any, Callable, Tuple
-from dataclasses import dataclass, field
-from oslash import Left, Right, Either
-import numpy as np
-import inspect
-from Dictionary import *
-from Helpers import try_catch, assert_not_null, assert_not_empty, assert_at_least, assert_function_signature
-from functools import partial
-
-#TODO after we need to check if a centroid, reference, perturbation, etc, formula is not better
+from typing import List, Optional, Callable
+from pymonad.either import Either
+from pymonad.tools import curry
+from .dictionary import *
+from .errors import try_catch, assert_not_null, assert_not_empty, assert_at_least, assert_function_signature
 
 def size(val: int)->Callable[..., int]:
       def callback():
@@ -28,9 +23,20 @@ def init(f: InitializationMethod)->Callable[..., InitializationMethod]:
 
 def topology(f: TopologyBuilder)->Callable[..., TopologyBuilder]:
       def callback():
-            param = "Topology builder method"
-            assert_function_signature(f, TopologyBuilder, param)
+            assert_function_signature(f, TopologyBuilder, "Topology builder method")
             return f
+      return callback
+
+def parameters(*parameters: Parameter)->Callable[..., Parameters]:
+      def callback():
+            params: Parameters = Parameters()
+            for k,v in parameters:
+                  assert_not_null(k, "Parameter name")
+                  if not callable(v):
+                        param = float(param)
+                        params[k] = lambda: param
+                  else: 
+                        param[k] = v
       return callback
     
 def all()->Callable[...,SelectionMethod]:
@@ -78,14 +84,22 @@ def apply(method: UpdateMethod)->Callable[..., UpdateMethod]:
             return method
       return callback
 
-def where(*conditions: Condition)->Callable[..., Optional[Conditions]]:
-      return lambda: [c for c in conditions 
-                        if c and assert_function_signature(c, Condition, "Condition method")]
+def where(*conditions: Condition)->Callable[..., Optional[Condition]]:
+      def compose_conditions(conditions: List[Condition], f: Optional[Condition])->Condition:
+            if len(conditions) > 0:
+                  c = conditions.pop()
+                  if f: 
+                      c = lambda a: f(a) and c(a)
+                  return compose_conditions(conditions, c)
+      if not conditions:
+            return lambda: None
+      return lambda: compose_conditions([c for c in conditions 
+                        if c and assert_function_signature(c, Condition, "Condition method")])
 
 def update(
       method: Callable[..., UpdateMethod],
       selection: Callable[..., SelectionMethod],
-      where: Optional[Callable[..., Conditions]] = None
+      where: Optional[Callable[..., Condition]] = None
 )->Callable[..., Update]:
       return lambda: Update(
                   method(),
@@ -100,7 +114,8 @@ def get_update_pipeline(*update_pipeline: Callable[..., Update])->List[Update]:
 def using(
       size: Callable[..., int],
       init: Callable[..., InitializationMethod],
-      topology: Callable[..., Topology],
+      topology: Optional[Callable[..., Topology]],
+      parameters: Optional[Callable[..., Parameters]],
       *update_pipeline: Callable[..., Update]
 )->Either[Callable[..., SearchStrategy], Exception]:
       return lambda: try_catch(
@@ -110,6 +125,7 @@ def using(
                         method=init(),
                         topology=None if not topology else topology()
                   ),
-                  update_pipeline=get_update_pipeline(update_pipeline)
+                  update_pipeline=get_update_pipeline(update_pipeline),
+                  parameters=None if not parameters else parameters()
             )
       )

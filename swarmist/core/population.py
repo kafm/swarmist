@@ -1,12 +1,11 @@
-from __future__ import annotations
-from typing import Optional, cast
+from typing import Callable, List, Optional, Union
 from functools import reduce
-from Dictionary import *
-from Exceptions import SearchEnded
-import numpy as np
 import sys
+import numpy as np
+from .dictionary import AgentList, Agent, GroupInfo, StaticTopology, PopulationInfo, Population
 
-def get_fits(agents: AgentList[Agent])->List[float]:
+
+def get_fits(agents: AgentList)->List[float]:
     return [a.fit for a in agents]
 
 def fit_to_prob(fits: List[float])->List[int]:
@@ -17,18 +16,18 @@ def fit_to_prob(fits: List[float])->List[int]:
         minFit = min(minFit, fit)
     return [(maxFit - fit) / (maxFit - minFit)/total for fit in fits]
 
-def get_best_k(agents:AgentList[Agent], rank:List[int], size: Optional[int] = None)->Union[Agent, List[Agent]]:
+def get_best_k(agents:AgentList, rank:List[int], size: Optional[int] = None)->Union[Agent, List[Agent]]:
     if not size:
          return agents[rank[0]]
     return [agents[i] for i in rank[:size]]
 
-def get_worse_k(agents:AgentList[Agent], rank:List[int], size: Optional[int] = None)->Union[Agent, List[Agent]]:
+def get_worse_k(agents:AgentList, rank:List[int], size: Optional[int] = None)->Union[Agent, List[Agent]]:
     if not size:
         return agents[rank[-1]]
     return [agents[i] for i in rank[-size:]]
 
 def pick_random(
-    agents: AgentList[Agent],  
+    agents: AgentList,  
     exclude: List[Agent]=None, 
     size: Optional[int] = None, 
     replace:bool=False, 
@@ -39,15 +38,14 @@ def pick_random(
             size=size, replace=replace, p=p
         )
 
-
-def get_agents_rank(agents: AgentList[Agent])->GroupInfo:
+def get_agents_rank(agents: AgentList)->GroupInfo:
     fits = get_fits(agents)
     probs = fit_to_prob(fits)
-    size = len(agents)
-    rank = sorted(np.arange(size), key=lambda i: probs[i])
+    gsize = len(agents)
+    rank = sorted(np.arange(gsize), key=lambda i: probs[i])
     return GroupInfo(
         all=lambda: agents,
-        size=lambda: size,
+        size=lambda: gsize,
         fits=lambda: fits,
         props=lambda: probs,
         best=lambda size: get_best_k(agents, rank, size),
@@ -71,5 +69,20 @@ def get_agents_rank(agents: AgentList[Agent])->GroupInfo:
     )
 
 
+def get_population(agents: AgentList, topology: Optional[Callable[..., StaticTopology]] )->Population:
+    return Population(
+        agents=agents,
+        size=len(agents),
+        rank=lambda: get_population_rank(agents, topology)
+    )
 
-
+def get_population_rank(agents: AgentList, topology: Optional[StaticTopology])->PopulationInfo:
+    population_rank: GroupInfo = get_agents_rank(agents)
+    groups: List[GroupInfo] = [
+       [population_rank for _ in agents] if not topology
+       else [get_agents_rank([agents[i] for i in group]) for group in topology]
+    ]
+    return PopulationInfo(
+        info=population_rank, 
+        group_info=groups
+    )
