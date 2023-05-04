@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Callable, Dict, Optional, List, TypeVar, Tuple
-from dataclasses import dataclass
+from dataclasses import dataclass, astuple
+import sys
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -16,7 +17,7 @@ ConstraintsChecker = Callable[[Pos], Pos]
 @dataclass(frozen=True)
 class FitnessFunctionDef:
     func: FitnessFunction
-    minimize: bool = True
+    minimize: bool
 
 @dataclass(frozen=True)
 class Bounds:
@@ -25,15 +26,8 @@ class Bounds:
 
 @dataclass(frozen=True)
 class Evaluation:
-    pos: Pos
-    fit: Fit
-
-@dataclass(frozen=True)
-class SearchSpace:
-    fit_func_def: FitnessFunctionDef
-    ndims: int
-    bounds: Bounds
-    constraints: ConstraintsChecker
+    pos: Pos = None
+    fit: Fit = sys.float_info.max
 
 @dataclass(frozen=True)
 class StopCondition:
@@ -54,7 +48,15 @@ class SearchContext:
     parameters: Parameters
 
 @dataclass(frozen=True)
+class ExecutionContext:
+    best: Evaluation = Evaluation()
+    curr_gen:int = 0
+    curr_eval:int = 0
+    arquived: bool = True
+    
+@dataclass(frozen=True)
 class Agent: 
+    index: int
     delta: Pos
     pos: Pos
     best: Pos
@@ -96,16 +98,16 @@ class Population:
     size: int
     rank: Callable[..., PopulationInfo]
 
-InitializationMethod = Callable[[SearchContext], AgentList]
+PosGenerationMethod = Callable[[SearchContext], Pos]
 StaticTopology = List[List[int]]
 DynamicTopology =  Callable[[Optional[AgentList], Optional[StaticTopology]], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
 
 @dataclass(frozen=True)
-class Init:
+class Initialization:
     population_size: int
-    method: InitializationMethod
+    generate_pos: PosGenerationMethod
     topology: Topology
 
 @dataclass(frozen=True)
@@ -124,25 +126,34 @@ class Update:
     method: UpdateMethod
     selection: SelectionMethod
     where: Condition
-    limit: int
 
+
+@dataclass(frozen=True)
+class SearchSpace:
+    fit_func_def: FitnessFunctionDef
+    ndims: int
+    bounds: Bounds
+    constraints: ConstraintsChecker
+   
 @dataclass(frozen=True)
 class SearchStrategy:
-    initialization: Init
+    initialization: Initialization
     update_pipeline: List[Update]
     parameters: Parameters
-
+   
 @dataclass(frozen=True)
 class SearchRequest:
-    strategy: SearchStrategy
-    space: SearchSpace
-    until: StopCondition
-
+    strategy: Optional[SearchStrategy]
+    space: Optional[SearchSpace]
+    until: Optional[StopCondition]
+    
 @dataclass(frozen=True)
 class SearchSucceed:
     best: Callable[..., Evaluation]
     last: Callable[..., Evaluation]
     results: List[Evaluation]
+    def __iter__(self):
+        return iter(astuple(self))
 
 @dataclass(frozen=True)
 class SearchFailed:

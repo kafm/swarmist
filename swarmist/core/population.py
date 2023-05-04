@@ -47,7 +47,7 @@ def get_agents_rank(agents: AgentList)->GroupInfo:
         all=lambda: agents,
         size=lambda: gsize,
         fits=lambda: fits,
-        props=lambda: probs,
+        probs=lambda: probs,
         best=lambda size: get_best_k(agents, rank, size),
         worse=lambda size:  get_worse_k(agents, rank, size),
         filter=lambda f: filter(agents,f),
@@ -69,7 +69,7 @@ def get_agents_rank(agents: AgentList)->GroupInfo:
     )
 
 
-def get_population(agents: AgentList, topology: Optional[Callable[..., StaticTopology]] )->Population:
+def get_population(agents: AgentList, topology: Optional[Callable[..., StaticTopology]] = None)->Population:
     return Population(
         agents=agents,
         size=len(agents),
@@ -78,10 +78,10 @@ def get_population(agents: AgentList, topology: Optional[Callable[..., StaticTop
 
 def get_population_rank(agents: AgentList, topology: Optional[StaticTopology])->PopulationInfo:
     population_rank: GroupInfo = get_agents_rank(agents)
-    groups: List[GroupInfo] = [
-       [population_rank for _ in agents] if not topology
-       else [get_agents_rank([agents[i] for i in group]) for group in topology]
-    ]
+    groups: List[GroupInfo] = (
+        [population_rank for _ in agents] if not topology
+        else [get_agents_rank([agents[i] for i in group]) for group in topology]
+    )
     return PopulationInfo(
         info=population_rank, 
         group_info=groups

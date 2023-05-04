@@ -1,27 +1,29 @@
 import numpy as np
 from core import *
 
-search(
-    space(
-        dimensions(30),
-        bounded(10, 20),
-        constrained_by(lambda pos: pos),
-        minimize(lambda x: x**2)
+res = search(
+    search_space=space(
+        dimensions=dimensions(30),
+        bounds=bounded(10, 20),
+        constraints=constrained_by(lambda pos: pos ),
+        fit_function=minimize(lambda x: sum(x**2))
     ),
-    until(
+    stop_condition=until(
         max_evals=50000
     ),
-    using(
+    search_strategy=using(
         size(40),
-        init(lambda ctx: [np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.evaluate)]),
+        init(lambda ctx: np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.ndims)),
         None,
         parameters(
             ("self_confidence", 2.05)
         ),
         update(
-            lambda ctx: None,
             select(all()),
+            apply(lambda ctx: ctx.agent),
             where(lambda a: a.improved)
         )
     )
 )
+
+print(res)

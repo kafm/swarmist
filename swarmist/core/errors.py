@@ -1,6 +1,5 @@
 from typing import Callable, TypeVar, List, Optional, Any
 from pymonad.either import Left, Right, Either
-import inspect
 from .dictionary import KeyValue
 
 
@@ -14,7 +13,7 @@ def try_catch(f: Callable[[], T])->Either[T,Exception]:
     try: 
         return Right(f())
     except Exception as e:
-        return Left(e)
+      return Left(e)
 
 def assert_not_null(val: Any, parameter: str):
       if not val: 
@@ -37,18 +36,20 @@ def assert_equal_length(val: int, expected: int,  parameter: str):
       if val != expected:
             raise ValueError(f"{parameter} must be equal to {expected}") 
       
-      
 def assert_at_least_one_nonnull(kv: KeyValue):
-    assert_not_null(vars, "Dictionary is null")
+    assert_not_null(kv, "Dictionary is null")
     keys = kv.keys()
-    for key in keys: 
-        if key[kv[key]]:
+    for k in keys: 
+        if kv[k]:
             return 
     params_str = ",".join(keys)
     raise(f"At least one of [{params_str}] should be provided")
       
-def assert_function_signature(f: Callable, expected: Callable, parameter: str):
-      func_signature = inspect.signature(f)
-      expected_signature = inspect.signature(expected)
-      if func_signature != expected_signature:
-            raise ValueError(f"{parameter} function signature mismatch. Expected: {expected_signature}, got: {func_signature}")
+def assert_callable(f: Any, parameter: str):
+      if not callable(f):
+            raise ValueError(f"{parameter} should be callable.")
+      
+def assert_number(num: Any, parameter: str):
+      t = type(num)
+      if t not in [float, int]:
+            raise ValueError(f"{parameter} should be a number.")

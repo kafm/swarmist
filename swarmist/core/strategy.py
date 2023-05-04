@@ -1,47 +1,46 @@
 from __future__ import annotations
 from typing import List, Optional, Callable
 from pymonad.either import Either
-from pymonad.tools import curry
 from .dictionary import *
-from .errors import try_catch, assert_not_null, assert_not_empty, assert_at_least, assert_function_signature
+from .errors import try_catch, assert_not_null, assert_not_empty, assert_at_least, assert_callable, assert_number
 
 def size(val: int)->Callable[..., int]:
-      def callback():
+      def callback()->int:
             param = "Population size"
             assert_not_null(val, param)
             assert_at_least(val, 2, param)
             return val
       return callback
 
-def init(f: InitializationMethod)->Callable[..., InitializationMethod]:
-      def callback():
-            param = "Initialization method"
+def init(f: PosGenerationMethod)->Callable[..., PosGenerationMethod]:
+      def callback()->PosGenerationMethod:
+            param = "Position initialization method"
             assert_not_null(f, param)
-            assert_function_signature(f, InitializationMethod, param)
+            assert_callable(f, param)
             return f
       return callback
 
 def topology(f: TopologyBuilder)->Callable[..., TopologyBuilder]:
-      def callback():
-            assert_function_signature(f, TopologyBuilder, "Topology builder method")
+      def callback()->TopologyBuilder:
+            assert_callable(f, "Topology builder method")
             return f
       return callback
 
 def parameters(*parameters: Parameter)->Callable[..., Parameters]:
-      def callback():
-            params: Parameters = Parameters()
+      def callback()->Parameters:
+            params: Parameters = {}
             for k,v in parameters:
                   assert_not_null(k, "Parameter name")
                   if not callable(v):
-                        param = float(param)
-                        params[k] = lambda: param
+                        assert_number(v, k)
+                        params[k] = lambda: v
                   else: 
-                        param[k] = v
+                        params[k] = v
       return callback
     
 def all()->Callable[...,SelectionMethod]:
       f: SelectionMethod = lambda info: info.all()
-      return lambda: f()
+      return lambda: f
 
 def roulette(size: int = None)->Callable[...,SelectionMethod]:
       def callback()->SelectionMethod:
@@ -63,7 +62,7 @@ def when(condition: Condition, size: int = None)->Callable[..., SelectionMethod]
             f: SelectionMethod = lambda info: info.filter(size, condition)
             assert_not_null(condition, param)
             assert_at_least(size, 1, param)
-            assert_function_signature(condition, Condition, param)
+            assert_callable(condition, param)
             return f
       return callback
       
@@ -72,7 +71,7 @@ def select(method: Callable[..., SelectionMethod])->Callable[..., SelectionMetho
             param = "Selection method"
             assert_not_null(method, param)
             f = method()
-            assert_function_signature(f, Callable[..., SelectionMethod], param)
+            assert_callable(f, param)
             return f
       return callback
 
@@ -80,12 +79,12 @@ def apply(method: UpdateMethod)->Callable[..., UpdateMethod]:
       def callback()->UpdateMethod:
             param = "Update method"
             assert_not_null(method, param)
-            assert_function_signature(method, UpdateMethod, param)
+            assert_callable(method, param)
             return method
       return callback
 
 def where(*conditions: Condition)->Callable[..., Optional[Condition]]:
-      def compose_conditions(conditions: List[Condition], f: Optional[Condition])->Condition:
+      def compose_conditions(conditions: List[Condition], f: Optional[Condition] = None)->Condition:
             if len(conditions) > 0:
                   c = conditions.pop()
                   if f: 
@@ -94,11 +93,11 @@ def where(*conditions: Condition)->Callable[..., Optional[Condition]]:
       if not conditions:
             return lambda: None
       return lambda: compose_conditions([c for c in conditions 
-                        if c and assert_function_signature(c, Condition, "Condition method")])
+                        if c and assert_callable(c, "Condition method")])
 
 def update(
-      method: Callable[..., UpdateMethod],
       selection: Callable[..., SelectionMethod],
+      method: Callable[..., UpdateMethod],
       where: Optional[Callable[..., Condition]] = None
 )->Callable[..., Update]:
       return lambda: Update(
@@ -113,19 +112,19 @@ def get_update_pipeline(*update_pipeline: Callable[..., Update])->List[Update]:
 
 def using(
       size: Callable[..., int],
-      init: Callable[..., InitializationMethod],
+      init: Callable[..., PosGenerationMethod],
       topology: Optional[Callable[..., Topology]],
       parameters: Optional[Callable[..., Parameters]],
       *update_pipeline: Callable[..., Update]
 )->Either[Callable[..., SearchStrategy], Exception]:
       return lambda: try_catch(
             lambda: SearchStrategy(
-                  init=Init(
+                  initialization=Initialization(
                         population_size=size(),
-                        method=init(),
+                        generate_pos=init(),
                         topology=None if not topology else topology()
                   ),
-                  update_pipeline=get_update_pipeline(update_pipeline),
+                  update_pipeline=get_update_pipeline(*update_pipeline),
                   parameters=None if not parameters else parameters()
             )
       )
