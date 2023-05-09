@@ -13,8 +13,8 @@ class SearchExecutor:
         fit_func: FitnessFunctionDef,
         ndims: int, 
         bounds: Bounds,
+        replace: bool,
         constraints: Optional[ConstraintsChecker],
-        params: Optional[Parameters],
         max_gen: Optional[int],
         min_fit: Optional[float], 
         max_evals:  Optional[int],
@@ -25,14 +25,14 @@ class SearchExecutor:
              self.clip,
              ndims, 
              bounds,
-             params
+             replace=replace
         )
         self.fit_func:FitnessFunction = fit_func
         self.constraints = constraints
         self.min_fit = min_fit
         self.max_evals = max_evals
         self.max_gen = max_gen
-        self.generations = []
+        self.generations:List[ExecutionContext] = []
         self.error = None
 
     def context(self)->SearchContext:
@@ -57,21 +57,30 @@ class SearchExecutor:
             arquived=False
         )    
         return fit 
+    
+    #TODO find better design
+    def assert_best(self, pos: Pos, fit: Fit):
+        if fit < self.ctx.best.fit:
+            self.ctx = replace(
+                self.ctx,
+                best=Evaluation(pos, fit),
+                arquived=False
+            )    
 
     def next(self)->Either[ExecutionContext, Exception]:
         res = try_catch(self._assert_max_gen)
         if res.is_right():
             self._arquive_execution()
             self.ctx = replace(self.ctx,
-                best=Evaluation(), 
+                #TODO find better way #best=Evaluation(se),
                 curr_gen=self.ctx.curr_gen+1
             )
             return Right(self.ctx)
         else:
-            self.error = res.either(lambda e: e)
+            self.error = res.either(lambda e: e, None)
         return res
 
-    def results(self)->List[Evaluation]:
+    def results(self)->List[ExecutionContext]:
         if not self.ctx.arquived:
             self._arquive_execution()
         return self.generations

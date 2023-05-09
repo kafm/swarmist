@@ -1,5 +1,6 @@
 import numpy as np
 from core import *
+from algos.pso import Pso
 
 res = search(
     search_space=space(
@@ -15,15 +16,14 @@ res = search(
         size(40),
         init(lambda ctx: np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.ndims)),
         None,
-        parameters(
-            ("self_confidence", 2.05)
-        ),
         update(
             select(all()),
-            apply(lambda ctx: ctx.agent),
-            where(lambda a: a.improved)
+            apply(Pso().update)
+            #apply(lambda ctx: ctx.agent),
+            #where(lambda a: a.improved)
         )
-    )
+    ), 
+    replace=False
 )
 
 print(res)

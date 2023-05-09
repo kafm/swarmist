@@ -25,18 +25,6 @@ def topology(f: TopologyBuilder)->Callable[..., TopologyBuilder]:
             assert_callable(f, "Topology builder method")
             return f
       return callback
-
-def parameters(*parameters: Parameter)->Callable[..., Parameters]:
-      def callback()->Parameters:
-            params: Parameters = {}
-            for k,v in parameters:
-                  assert_not_null(k, "Parameter name")
-                  if not callable(v):
-                        assert_number(v, k)
-                        params[k] = lambda: v
-                  else: 
-                        params[k] = v
-      return callback
     
 def all()->Callable[...,SelectionMethod]:
       f: SelectionMethod = lambda info: info.all()
@@ -114,7 +102,6 @@ def using(
       size: Callable[..., int],
       init: Callable[..., PosGenerationMethod],
       topology: Optional[Callable[..., Topology]],
-      parameters: Optional[Callable[..., Parameters]],
       *update_pipeline: Callable[..., Update]
 )->Either[Callable[..., SearchStrategy], Exception]:
       return lambda: try_catch(
@@ -124,7 +111,6 @@ def using(
                         generate_pos=init(),
                         topology=None if not topology else topology()
                   ),
-                  update_pipeline=get_update_pipeline(*update_pipeline),
-                  parameters=None if not parameters else parameters()
+                  update_pipeline=get_update_pipeline(*update_pipeline)
             )
       )

@@ -2,7 +2,7 @@ from typing import Union, Dict, Optional, List, TypeVar, Tuple, Callable
 from dataclasses import dataclass
 import numpy as np
 import scipy.stats as ss
-from core import Bounds
+from swarmist.core import Bounds
 
 def uniform(low: float = 0.0, high: float = 1.0, size:int = None)->Union[float, List[float]]:
     return np.random.uniform(low=low, high=high, size=size)

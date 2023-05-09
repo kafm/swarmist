@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Callable, Dict, Optional, List, TypeVar, Tuple
+from typing import Callable, Dict, Optional, List, TypeVar, Tuple, Union
 from dataclasses import dataclass, astuple
 import sys
 
@@ -35,17 +35,13 @@ class StopCondition:
     max_evals: int
     max_gen: int
     
-ParameterValue = int | float | Callable
-Parameter = Tuple[str, ParameterValue]
-Parameters = KeyValue[str, Callable[..., ParameterValue]]
-
 @dataclass(frozen=True)
 class SearchContext:
     evaluate: FitnessFunction
     clip: Pos
     ndims: int
     bounds: Bounds
-    parameters: Parameters
+    replace:bool = False
 
 @dataclass(frozen=True)
 class ExecutionContext:
@@ -57,6 +53,7 @@ class ExecutionContext:
 @dataclass(frozen=True)
 class Agent: 
     index: int
+    ndims: int
     delta: Pos
     pos: Pos
     best: Pos
@@ -74,13 +71,12 @@ class GroupInfo:
     size: Callable[[], int]
     fits: List[Fit]
     probs: List[float]
-    best: Callable[[Optional[int]], Agent]
-    worse: Callable[[Optional[int]], Agent]
+    best: Callable[[Optional[int]], Union[Agent, AgentList ]]
+    worse: Callable[[Optional[int]], Union[Agent, AgentList ]]
     filter: Callable[[Callable[[Agent,Optional[int]], bool]], AgentList]
-    pick_random: Callable[[Optional[int]], OneOrMoreAgents]
-    pick_roulette: Callable[[Optional[int]], OneOrMoreAgents]
+    pick_random: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
+    pick_roulette: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
     map: Callable[[Agent], T]
-    reduce: Callable[[Agent], T]
 
 @dataclass(frozen=True)
 class AgentGroup:
@@ -111,14 +107,13 @@ class Initialization:
     topology: Topology
 
 @dataclass(frozen=True)
-class UpdateContext:
+class UpdateContext(GroupInfo):
     agent: Agent
-    info: GroupInfo
-    parameters: Parameters
 
 SelectionMethod = Callable[[GroupInfo], AgentList]
 UpdateCondition = Callable[[UpdateContext], bool]
 UpdateMethod = Callable[[UpdateContext], Agent]
+RecombinationMethod = Callable[[Pos, Pos], Pos]
 Condition = Callable[[Agent], bool]
 
 @dataclass(frozen=True)
@@ -139,7 +134,6 @@ class SearchSpace:
 class SearchStrategy:
     initialization: Initialization
     update_pipeline: List[Update]
-    parameters: Parameters
    
 @dataclass(frozen=True)
 class SearchRequest:
@@ -151,7 +145,7 @@ class SearchRequest:
 class SearchSucceed:
     best: Callable[..., Evaluation]
     last: Callable[..., Evaluation]
-    results: List[Evaluation]
+    results: List[ExecutionContext]
     def __iter__(self):
         return iter(astuple(self))
 
