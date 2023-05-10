@@ -35,15 +35,14 @@ class Pso(UpdateMethodBuilder):
         ndims = ctx.agent.ndims
         ref = self.reference(ctx)
         centers = self.centroid(ctx)
-        #TODO pm = np.sum(self.centroid(ctx), axis=0)/len(centers)
-        pm = self.centroid(ctx)[0]
+        pm = np.sum(self.centroid(ctx), axis=0)/len(centers)
         velocity = self.chi() * (
                 ctx.agent.delta +
                 self.c1() * np.random.rand(ndims) * (ctx.agent.best - ref) +
                 self.c2() * np.random.rand(ndims) * (pm - ref)
         )
         pos = self.recombination(ctx.agent, ctx.agent.pos + velocity)    
-        return replace(ctx.agent, pos=pos)    
+        return replace(ctx.agent, pos=pos)
     
 
 class Fips(Pso):

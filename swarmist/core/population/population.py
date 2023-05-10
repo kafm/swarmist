@@ -1,9 +1,37 @@
 from typing import Callable, List, Optional, Union
-from dataclasses import replace
+from pymonad.either import Right, Either
 import sys
 import numpy as np
-from .dictionary import AgentList, Agent, GroupInfo, StaticTopology, PopulationInfo, Population, UpdateContext, Fit, OneOrMoreAgents, T
+from ..dictionary import *
+from ..errors import assert_equal_length, assert_callable, try_catch
+from .agent import create_agent
 
+def init_topology(agents: AgentList, topology: Topology)->Topology:
+    neighborhoods = topology(agents) if topology else None
+    if not neighborhoods: 
+        return neighborhoods
+    if  isinstance(neighborhoods, Topology):
+        assert_equal_length(len(topology), len(agents), "Number of neighborhoods")
+        return lambda _: neighborhoods 
+    else:
+        assert_callable(topology, "Dynamic topology")
+    return neighborhoods
+
+def create_agents(pos_generator: PosGenerationMethod, size: int, ctx: SearchContext)->AgentList:
+    return [
+        create_agent(
+            ctx=ctx,
+            pos_generator=pos_generator,
+            index=i
+        ) for i in range(size)
+    ]
+
+def init_population(init: Initialization, ctx: SearchContext)->Either[Population, Exception]:
+    def callback()->Population:
+        agents = create_agents(init.generate_pos, init.population_size,ctx)
+        topology = init_topology(agents, init.topology)
+        return get_population(agents, topology)
+    return try_catch(callback)
 
 def get_fits(agents: AgentList)->List[float]:
     return [a.fit for a in agents]
@@ -65,17 +93,16 @@ def get_agents_rank(agents: AgentList)->GroupInfo:
         )
     )
 
-def get_update_context(agent: Agent, info: GroupInfo, replace: bool = False)->UpdateContext:
-    return UpdateContextWrapper(agent, info, replace).getContext()
-
 def get_population(agents: AgentList, topology: Optional[Callable[..., StaticTopology]] = None)->Population:
     return Population(
         agents=agents,
-        size=len(agents),
-        rank=lambda: get_population_rank(agents, topology)
+        topology=topology,
+        size=len(agents)
     )
 
-def get_population_rank(agents: AgentList, topology: Optional[StaticTopology] = None)->PopulationInfo:
+def get_population_rank(population: Population)->PopulationInfo:
+    agents = population.agents
+    topology = population.topology
     population_rank: GroupInfo = get_agents_rank(agents)
     groups: List[GroupInfo] = (
         [population_rank for _ in agents] if not topology
@@ -85,40 +112,3 @@ def get_population_rank(agents: AgentList, topology: Optional[StaticTopology] = 
         info=population_rank, 
         group_info=groups
     )
-
-
-class UpdateContextWrapper:
-    def __init__(self, agent: Agent, info: GroupInfo, replace:bool=False):
-        self.agent = agent
-        self.info = info
-        self.replace = replace
-        self.picked: AgentList = []
-
-    def getContext(self)->UpdateContext:
-        return UpdateContext(
-            agent=self.agent,
-            all = self.info.all,
-            size = self.info.size,
-            fits = self.info.fits,
-            probs = self.info.probs,
-            filter = self.info.filter, 
-            map = self.info.map,
-            best = self._best,
-            worse = self._worse,
-            pick_random = self._pick_random,
-            pick_roulette = self._pick_roulette
-        )
-    
-    def _best(self, k: Optional[int] = None)->Union[Agent, AgentList]:
-        return self.info.best(k)
-    
-    def _worse(self, k: Optional[int] = None)->Union[Agent, AgentList]:
-        return self.info.worse(k)
-    
-    def _pick_random(self, k: Optional[int] = None)-> OneOrMoreAgents:
-        return pick_random(self.info.all(),size=k) #TODO deal with exclude
-
-    def _pick_roulette(self, k: Optional[int] = None)->OneOrMoreAgents:
-        return pick_random(self.info.all(),size=k, p=self.info.probs) #TODO deal with exclude
-
-    

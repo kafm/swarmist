@@ -5,6 +5,7 @@ import sys
 
 K = TypeVar("K")
 V = TypeVar("V")
+T = TypeVar("T")
 
 KeyValue = Dict[K, V]
 
@@ -41,15 +42,8 @@ class SearchContext:
     clip: Pos
     ndims: int
     bounds: Bounds
-    replace:bool = False
 
-@dataclass(frozen=True)
-class ExecutionContext:
-    best: Evaluation = Evaluation()
-    curr_gen:int = 0
-    curr_eval:int = 0
-    arquived: bool = True
-    
+
 @dataclass(frozen=True)
 class Agent: 
     index: int
@@ -91,8 +85,8 @@ class PopulationInfo:
 @dataclass(frozen=True)
 class Population:
     agents: AgentList
+    topology: Topology #TODO check topology
     size: int
-    rank: Callable[..., PopulationInfo]
 
 PosGenerationMethod = Callable[[SearchContext], Pos]
 StaticTopology = List[List[int]]
@@ -140,18 +134,9 @@ class SearchRequest:
     strategy: Optional[SearchStrategy]
     space: Optional[SearchSpace]
     until: Optional[StopCondition]
-    
-@dataclass(frozen=True)
-class SearchSucceed:
-    best: Callable[..., Evaluation]
-    last: Callable[..., Evaluation]
-    results: List[ExecutionContext]
-    def __iter__(self):
-        return iter(astuple(self))
+
+SearchResults = List[Evaluation]
 
 @dataclass(frozen=True)
 class SearchFailed:
     error: Exception
-
-
-SearchResults = SearchSucceed | SearchFailed

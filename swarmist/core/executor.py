@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional
-from pymonad.either import Right, Either
+from pymonad.either import Right, Left, Either
 from dataclasses import replace
 import sys
 import numpy as np
@@ -13,27 +13,28 @@ class SearchExecutor:
         fit_func: FitnessFunctionDef,
         ndims: int, 
         bounds: Bounds,
-        replace: bool,
         constraints: Optional[ConstraintsChecker],
         max_gen: Optional[int],
         min_fit: Optional[float], 
         max_evals:  Optional[int],
     ):
-        self.ctx = ExecutionContext()
         self.search_ctx = SearchContext(
              self.evaluate, 
              self.clip,
              ndims, 
-             bounds,
-             replace=replace
+             bounds
         )
         self.fit_func:FitnessFunction = fit_func
         self.constraints = constraints
         self.min_fit = min_fit
         self.max_evals = max_evals
         self.max_gen = max_gen
-        self.generations:List[ExecutionContext] = []
-        self.error = None
+        self.curr_fit: Fit = sys.float_info.max
+        self.curr_pos: Pos = None
+        self.curr_gen:int = 0
+        self.curr_eval:int = 0
+        self._results:List[Evaluation] = [Evaluation()]
+        self._ended = False
 
     def context(self)->SearchContext:
         return self.search_ctx
@@ -48,55 +49,38 @@ class SearchExecutor:
         self._assert_max_evals()
         self._assert_min_fit()
         fit = self.fit_func(pos)
-        curr_eval = self.ctx.curr_eval + 1
-        best = self.ctx.best
-        self.ctx = replace(
-            self.ctx, 
-            best=Evaluation(pos, fit) if fit < best.fit else best, 
-            curr_eval=curr_eval,
-            arquived=False
-        )    
+        self.curr_eval += 1
+        self._log_result(pos, fit)
         return fit 
     
-    #TODO find better design
-    def assert_best(self, pos: Pos, fit: Fit):
-        if fit < self.ctx.best.fit:
-            self.ctx = replace(
-                self.ctx,
-                best=Evaluation(pos, fit),
-                arquived=False
-            )    
+    def run(self, callback: Callable)->Either[SearchResults, Exception]:
+        while self._next():
+            try: 
+                callback()
+            except Exception as e: 
+                if not isinstance(e, SearchEnded):
+                    return Left(e)
+                self._log_result(self.curr_pos, self.curr_fit)
+                break
+        return Right(self._results)
+        
+    def _log_result(self, pos: Pos, fit: float):
+        if fit <= self.curr_fit:
+            self.curr_fit = fit
+            self.curr_pos = pos
+            self._results[self.curr_gen] = Evaluation(pos,fit)
 
-    def next(self)->Either[ExecutionContext, Exception]:
-        res = try_catch(self._assert_max_gen)
-        if res.is_right():
-            self._arquive_execution()
-            self.ctx = replace(self.ctx,
-                #TODO find better way #best=Evaluation(se),
-                curr_gen=self.ctx.curr_gen+1
-            )
-            return Right(self.ctx)
-        else:
-            self.error = res.either(lambda e: e, None)
-        return res
-
-    def results(self)->List[ExecutionContext]:
-        if not self.ctx.arquived:
-            self._arquive_execution()
-        return self.generations
-    
-    def _arquive_execution(self):
-        self.ctx = replace(self.ctx, arquived=True)
-        self.generations.append(self.ctx)
+    def _next(self)->bool:
+        if not self._ended and (not self.max_gen or self.curr_gen < self.max_gen):
+            self.curr_gen += 1
+            self._results.append(Evaluation())      
+            return True
+        return False  
     
     def _assert_max_evals(self):
-        if self.max_evals and self.ctx.curr_eval >= self.max_evals:
+        if self.max_evals and self.curr_eval >= self.max_evals:
             raise SearchEnded("Maximum number of evaluations reached")
         
     def _assert_min_fit(self):
-        if self.min_fit and self.ctx.best.fit <= self.min_fit:
+        if self.min_fit and self.curr_fit <= self.min_fit:
             raise SearchEnded("Fitness goal reached")
-        
-    def _assert_max_gen(self):
-        if self.max_gen and self.ctx.curr_gen >= self.max_gen:
-            raise SearchEnded("Maximum number of generations reached")

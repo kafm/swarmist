@@ -50,7 +50,6 @@ def self_best(ctx: UpdateContext)->Pos:
     return ctx.agent.best
 
 def self_pos(ctx: UpdateContext)->Pos:
-    print(ctx.agent)
     return ctx.agent.pos
 
 

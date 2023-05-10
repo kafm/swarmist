@@ -1,7 +1,7 @@
+from __future__ import annotations
 from typing import Callable, TypeVar, List, Optional, Any
 from pymonad.either import Left, Right, Either
 from .dictionary import KeyValue
-
 
 T = TypeVar("T")
 
@@ -43,7 +43,7 @@ def assert_at_least_one_nonnull(kv: KeyValue):
         if kv[k]:
             return 
     params_str = ",".join(keys)
-    raise(f"At least one of [{params_str}] should be provided")
+    raise ValueError(f"At least one of [{params_str}] should be provided")
       
 def assert_callable(f: Any, parameter: str):
       if not callable(f):
