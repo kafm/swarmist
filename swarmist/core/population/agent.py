@@ -19,20 +19,21 @@ def create_agent(pos_generator: PosGenerationMethod, index: int, ctx: SearchCont
         improved=True
     )
 
-def do_apply(agent: Agent, old_agent: Agent, executor: SearchExecutor)->Agent: 
+def do_apply(new_agent: Agent, old_agent: Agent, executor: SearchExecutor)->Agent: 
     #TODO check if other algorithms works like this
-    pos = executor.clip(agent.pos)
+    pos = executor.clip(new_agent.pos)
+    delta = pos - old_agent.pos 
     fit = executor.evaluate(pos)
-    improved = fit < agent.fit
+    improved = fit < new_agent.fit
     best = pos 
     trials = 0
     if not improved:
-        best = agent.best
-        fit = agent.fit
-        trials = agent.trials + 1 
+        best = new_agent.best
+        fit = new_agent.fit
+        trials = new_agent.trials + 1 
     return replace(
-        agent, 
-        delta=pos-old_agent.pos,
+        new_agent, 
+        delta=delta,
         pos=pos,
         fit=fit,
         best=best,
@@ -42,10 +43,12 @@ def do_apply(agent: Agent, old_agent: Agent, executor: SearchExecutor)->Agent:
 
 def update_agent(update: Update, agent: Agent, info: GroupInfo, executor: SearchExecutor)->Agent:    
     where = update.where 
+    new_agent = update.method(get_update_context(agent, info))
     candidate = do_apply(
-        update.method(
-            get_update_context(agent, info)
-        ), agent, executor)
+        new_agent=new_agent, 
+        old_agent=agent, 
+        executor=executor
+    )
     return candidate if not where or where(candidate) else agent
 
 def get_update_context(agent: Agent, info: GroupInfo, replace: bool = False)->UpdateContext:

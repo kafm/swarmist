@@ -101,7 +101,7 @@ def get_update_pipeline(*update_pipeline: Callable[..., Update])->List[Update]:
 def using(
       size: Callable[..., int],
       init: Callable[..., PosGenerationMethod],
-      topology: Optional[Callable[..., Topology]],
+      topology: Optional[Callable[..., TopologyBuilder]],
       *update_pipeline: Callable[..., Update]
 )->Either[Callable[..., SearchStrategy], Exception]:
       return lambda: try_catch(

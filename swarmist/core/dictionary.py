@@ -90,7 +90,7 @@ class Population:
 
 PosGenerationMethod = Callable[[SearchContext], Pos]
 StaticTopology = List[List[int]]
-DynamicTopology =  Callable[[Optional[AgentList], Optional[StaticTopology]], StaticTopology]
+DynamicTopology =  Callable[[AgentList], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
 
@@ -98,7 +98,7 @@ TopologyBuilder = Callable[[AgentList], Topology]
 class Initialization:
     population_size: int
     generate_pos: PosGenerationMethod
-    topology: Topology
+    topology: TopologyBuilder
 
 @dataclass(frozen=True)
 class UpdateContext(GroupInfo):

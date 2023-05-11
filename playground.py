@@ -2,25 +2,17 @@
 from functools import reduce
 from operator import add
 import numpy as np
- 
-# initializing list
-lis = [1, 3, 5, 6, 2]
 
-print(reduce(add, map(lambda x: x - 2, lis)))
-res = 0
-for el in lis:
-    res += el - 2
-print(res)
-
-rands = np.random.rand(3, 4)
-sum_i = column_sum = np.sum(rands, axis=0)
-print(rands)
-print(sum_i)
-
-
-ndims = 3
-n = 2
-w = np.random.rand(n, ndims)
-lis2 = [[1,2,3], [4,5,6]]
-print(f"w={w}")
-print(np.multiply(map(lambda x: x, lis),w),np.sum(w, axis=0))
+old_pos=np.array([
+    -5.12,-5.12,5.12,-5.12,-5.12,-5.12,-5.12,
+    -5.12,5.12,-5.12,-5.12,-5.12,5.12,-5.12,
+    -5.12,5.12,5.12,5.12,5.12,5.12
+])
+new_pos=np.array([
+    -6.71124126,-7.18601559,7.06152328,
+    -14.4569933,-9.15346999,-16.26941932,
+    -12.4214275,-7.26829547,6.7786636,-21.26472321,-9.19095519,-6.34819023,
+    8.21660864,-16.21915352,-11.65725032,6.83387422,9.57475314,7.07778131,6.06477322,7.12422852
+])
+v = old_pos - new_pos
+print(v)

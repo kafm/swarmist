@@ -73,7 +73,7 @@ class SearchExecutor:
     def _next(self)->bool:
         if not self._ended and (not self.max_gen or self.curr_gen < self.max_gen):
             self.curr_gen += 1
-            self._results.append(Evaluation())      
+            self._results.append(Evaluation(self.curr_pos, self.curr_fit))      
             return True
         return False  
     

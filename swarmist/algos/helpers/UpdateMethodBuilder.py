@@ -19,5 +19,5 @@ class UpdateMethodBuilder(ABC):
         self.recombination = recombination
         
     @abstractmethod
-    def update(self, ctx: UpdateContext)->UpdateMethod:
+    def update(self, ctx: UpdateContext)->Agent:
         pass

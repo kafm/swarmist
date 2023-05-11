@@ -2,26 +2,27 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 from swarmist.core import *
+from swarmist.algos.helpers import lbest
 from swarmist.algos.pso import Pso, Barebones, Fips
 from swarmist.utils.benchmark import sphere
-
 from swarmist_bck.PSO import SearchResult, PSO
 
 numDimensions = 20
 populationSize = 40
-numGenerations = 1001
+numGenerations = 1000
 maxEvaluations = 50000
 minFitness = None
 func, bounds = sphere()
 
 res_original: SearchResult = PSO(
+    variant="barebones",
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
     populationSize = populationSize,
     #maxGenerations = numGenerations,
     maxEvaluations = maxEvaluations
-)
+) 
 
 res_new = search(
     search_space=space(
@@ -35,12 +36,14 @@ res_new = search(
         max_evals=maxEvaluations
     ),
     search_strategy=using(
-        size(40),
+        size(populationSize),
         init(lambda ctx: np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.ndims)),
-        None,
+        None, #topology(lbest()),
         update(
             select(all()),
-            apply(Pso().update),
+            #apply(Pso().update),
+            #apply(Fips().update)
+            apply(Barebones().update),
             #apply(lambda ctx: ctx.agent),
             #where(lambda a: a.improved)
         )
@@ -51,7 +54,6 @@ res_new = search(
 
 def plot_algos(results: SearchResults, orig_results: SearchResult):
     np.seterr('raise')
-    print(results)
     plt.figure("Sphere")
     #plt.plot([r.best.fit for r in res.results])
     plt.plot([r.fit for r in results], label="New")

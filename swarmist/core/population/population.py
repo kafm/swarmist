@@ -1,21 +1,17 @@
 from typing import Callable, List, Optional, Union
-from pymonad.either import Right, Either
+from pymonad.either import Either
 import sys
 import numpy as np
 from ..dictionary import *
-from ..errors import assert_equal_length, assert_callable, try_catch
+from ..errors import assert_equal_length, try_catch
 from .agent import create_agent
 
-def init_topology(agents: AgentList, topology: Topology)->Topology:
-    neighborhoods = topology(agents) if topology else None
-    if not neighborhoods: 
-        return neighborhoods
-    if  isinstance(neighborhoods, Topology):
+def init_topology(agents: AgentList, builder: TopologyBuilder)->Topology:
+    topology = builder(agents) if builder else None
+    if topology and not callable(topology):
         assert_equal_length(len(topology), len(agents), "Number of neighborhoods")
-        return lambda _: neighborhoods 
-    else:
-        assert_callable(topology, "Dynamic topology")
-    return neighborhoods
+        return lambda _: topology 
+    return topology
 
 def create_agents(pos_generator: PosGenerationMethod, size: int, ctx: SearchContext)->AgentList:
     return [
@@ -102,8 +98,9 @@ def get_population(agents: AgentList, topology: Optional[Callable[..., StaticTop
 
 def get_population_rank(population: Population)->PopulationInfo:
     agents = population.agents
-    topology = population.topology
+    topology = population.topology(agents) if population.topology else None 
     population_rank: GroupInfo = get_agents_rank(agents)
+    groups:  List[GroupInfo] = []
     groups: List[GroupInfo] = (
         [population_rank for _ in agents] if not topology
         else [get_agents_rank([agents[i] for i in group]) for group in topology]

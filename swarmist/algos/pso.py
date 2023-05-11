@@ -3,6 +3,7 @@ from typing import Callable, Union
 from dataclasses import replace
 import numpy as np
 from swarmist.core.dictionary import *
+from swarmist.utils import random
 from .helpers import *
 
 class Pso(UpdateMethodBuilder):
@@ -31,17 +32,17 @@ class Pso(UpdateMethodBuilder):
         self.c2 = c2 if callable(c2) else lambda: c2
         self.chi = chi if callable(chi) else lambda: chi
     
-    def update(self, ctx: UpdateContext)->Pos:
+    def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
         ref = self.reference(ctx)
         centers = self.centroid(ctx)
-        pm = np.sum(self.centroid(ctx), axis=0)/len(centers)
+        pm = np.sum(centers, axis=0)/len(centers)
         velocity = self.chi() * (
                 ctx.agent.delta +
-                self.c1() * np.random.rand(ndims) * (ctx.agent.best - ref) +
-                self.c2() * np.random.rand(ndims) * (pm - ref)
+                self.c1() * random.rand(ndims) * (ctx.agent.best - ref) +
+                self.c2() * random.rand(ndims) * (pm - ref)
         )
-        pos = self.recombination(ctx.agent, ctx.agent.pos + velocity)    
+        pos = self.recombination(self.crossover_with(ctx), ctx.agent.pos + velocity)    
         return replace(ctx.agent, pos=pos)
     
 
@@ -52,7 +53,7 @@ class Fips(Pso):
     [1] https://ieeexplore.ieee.org/abstract/document/1304843
     """
     def __init__(self, 
-        centroid: PosListGetter = stochastic_cog,
+        centroid: PosListGetter = all_neighbors,
         reference: PosGetter = self_pos,
         crossover_with: PosGetter = self_pos,
         recombination: RecombinationMethod = replace_all,
@@ -67,15 +68,26 @@ class Fips(Pso):
             recombination = recombination,
             c1=c1,c2=c2,chi=chi
         )
-    
-    def update(self, ctx: UpdateContext)->UpdateMethod:
-        c = (self.c1()+self.c2()) / ctx.size()
+     
+    def update(self, ctx: UpdateContext)->Agent:
+        ndims = ctx.agent.ndims
+        centers = self.centroid(ctx)
         ref = self.reference(ctx)
-        pm =  self.centroid(ctx)
-        persistence = ctx.agent.delta
-        sct = np.random.rand(ctx.agent.ndims) * c * (pm - ref) #Check if * w is needed for Social central tendency
-        pos = self.recombination(ctx.agent, self.crossover_with(ctx) + self.chi() * (persistence + sct) )
-        return replace(ctx.agent, pos=pos)    
+        n = len(centers)
+        phi = self.c1()+self.c2()
+        c = phi / n
+        pm = np.zeros(ndims)
+        w = np.zeros(ndims)
+        pos = ctx.agent.pos
+        for p in centers:
+            wi = random.rand(ndims)
+            pm += wi * p
+            w += wi
+        pm = pm/w
+        sct = random.rand(ndims) * c * w * (pm - ref)  # Social central tendency
+        velocity = self.chi() * (ctx.agent.delta + sct)
+        pos = self.recombination(self.crossover_with(ctx), ctx.agent.pos + velocity)    
+        return replace(ctx.agent, pos=pos)
     
 class Barebones(Pso):
     """
@@ -85,8 +97,8 @@ class Barebones(Pso):
     """
     def __init__(self, 
         centroid: PosListGetter = global_best,
-        reference: PosGetter = self_pos,
-        crossover_with: PosGetter = self_pos,
+        reference: PosGetter = self_best,
+        crossover_with: PosGetter = self_best,
         recombination: RecombinationMethod = replace_all
     ):
         super().__init__(
@@ -96,14 +108,14 @@ class Barebones(Pso):
             recombination = recombination
         )
     
-    def update(self, ctx: UpdateContext)->UpdateMethod:
+    def update(self, ctx: UpdateContext)->Agent:
         centers = self.centroid(ctx)
         pm = np.sum(self.centroid(ctx), axis=0)/len(centers)
         ref = self.reference(ctx)
         mu = np.divide(np.add(ref, pm),2)
         sd = np.abs(np.subtract(ref, pm))
-        pos = np.random.normal(mu, sd)
-        return replace(ctx.agent, pos=pos)    
+        pos = self.recombination(self.crossover_with(ctx), random.normal(loc=mu, scale=sd))    
+        return replace(ctx.agent, pos=pos)     
 
 def get_chi(phi: float=4.1, k: float=.729) -> float:
     return np.sqrt(k) if phi <= 4 else np.sqrt(

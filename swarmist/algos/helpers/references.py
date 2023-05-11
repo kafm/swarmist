@@ -8,16 +8,19 @@ def global_best(ctx: UpdateContext)->List[Pos]:
 def k_best(ctx: UpdateContext, size: Optional[int]= None)->List[Pos]: 
     return [a.best for a in ctx.best(size if size else ctx.info.size())]
 
-def stochastic_cog(ctx: UpdateContext)->List[Pos]:
-    ndims = ctx.agent.ndims
-    w = np.zeros(ndims)
-    pm = np.zeros(ndims)
-    neighbors = ctx.all()
-    for neighbor in neighbors:
-        wi = np.random.rand(ndims)
-        w += wi
-        pm += np.multiply(wi, neighbor.best)
-    return [np.divide(pm, w)]
+def all_neighbors(ctx: UpdateContext)->List[Pos]:
+    return [a.best for a in ctx.all()]
+
+# def stochastic_cog(ctx: UpdateContext)->List[Pos]:
+#     ndims = ctx.agent.ndims
+#     w = np.zeros(ndims)
+#     pm = np.zeros(ndims)
+#     neighbors = ctx.all()
+#     for neighbor in neighbors:
+#         wi = np.random.rand(ndims)
+#         w += wi
+#         pm += np.multiply(wi, neighbor.best)
+#     return [np.divide(pm, w)]
 
 #TODO 
 # def rand_to_best(ctx: UpdateContext, y: int, f: float, gamma: float)->List[Pos]:
