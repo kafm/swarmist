@@ -1,15 +1,74 @@
+from typing import cast
 from swarmist.core.dictionary import *
 import numpy as np
 
-#centroid
-def global_best(ctx: UpdateContext)->List[Pos]:
-    return [ctx.best().best]
+@dataclass(frozen=True)
+class Reference:  
+    average: Callable[..., Pos]
+    get: List[Pos]
 
-def k_best(ctx: UpdateContext, size: Optional[int]= None)->List[Pos]: 
-    return [a.best for a in ctx.best(size if size else ctx.info.size())]
+def best_neighbor()->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos = ctx.best(1)[0].best
+        return Reference(
+            average=lambda: pos,
+            get=lambda: [pos]
+        )
+    return callback
 
-def all_neighbors(ctx: UpdateContext)->List[Pos]:
-    return [a.best for a in ctx.all()]
+def k_best_neighbors(size: int= 1)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = [a.best for a in ctx.best(size)]
+        return Reference(
+            average=average_pos(pos_list, size),
+            get=lambda: pos_list
+        )
+    return callback
+
+def worse_neighbor()->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos = ctx.worse(1)[0].best
+        return Reference(
+            average=lambda: pos,
+            get=lambda: [pos]
+        )
+    return callback
+
+def k_worse_neighbors(size: int= 1)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = [a.best for a in ctx.worse(size)]
+        return Reference(
+            average=average_pos(pos_list, size),
+            get=lambda: pos_list
+        )
+    return callback
+
+def all_neighbors()->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = [a.best for a in  ctx.all()]
+        return Reference(
+            average=average_pos(pos_list, ctx.size()),
+            get=lambda: pos_list
+        )
+    return callback
+
+def self_best()->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos = ctx.agent.best
+        return Reference(
+            average=lambda: pos,
+            get=lambda: [pos]
+        )
+    return callback
+
+def self_pos()->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos = ctx.agent.pos
+        return Reference(
+            average=lambda: pos,
+            get=lambda: [pos]
+        )
+    return callback
 
 # def stochastic_cog(ctx: UpdateContext)->List[Pos]:
 #     ndims = ctx.agent.ndims
@@ -48,12 +107,6 @@ def all_neighbors(ctx: UpdateContext)->List[Pos]:
 #         for i in range(middlePoint)
 #     ]) 
 
-#reference
-def self_best(ctx: UpdateContext)->Pos:
-    return ctx.agent.best
 
-def self_pos(ctx: UpdateContext)->Pos:
-    return ctx.agent.pos
-
-
-
+def average_pos(pos_list: List[Pos], size: int)->Pos:
+    return np.sum(pos_list)/size

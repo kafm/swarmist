@@ -14,10 +14,9 @@ class Pso(UpdateMethodBuilder):
     [1] https://ieeexplore.ieee.org/abstract/document/985692
     """
     def __init__(self, 
-        centroid: PosListGetter = global_best,
-        reference: PosGetter = self_pos, #TODO check better the reference
-        crossover_with: PosGetter = self_pos,
-        recombination: RecombinationMethod = replace_all,
+        centroid: ReferenceGetter = best_neighbor(),
+        reference: ReferenceGetter = self_best(),
+        recombination: RecombinationMethod = replace_all(),
         c1: Union[float, Callable] = 2.05,
         c2: Union[float, Callable] = 2.05,
         chi: float = .729
@@ -25,7 +24,6 @@ class Pso(UpdateMethodBuilder):
         super().__init__(
             centroid = centroid,
             reference = reference,
-            crossover_with = crossover_with,
             recombination = recombination
         )
         self.c1 = c1 if callable(c1) else lambda: c1
@@ -34,16 +32,15 @@ class Pso(UpdateMethodBuilder):
     
     def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
-        ref = self.reference(ctx)
-        centers = self.centroid(ctx)
-        pm = np.sum(centers, axis=0)/len(centers)
+        ref = self.reference(ctx).average()
+        pm = self.centroid(ctx).average()
+        pos = ctx.agent.pos
         velocity = self.chi() * (
                 ctx.agent.delta +
-                self.c1() * random.rand(ndims) * (ctx.agent.best - ref) +
-                self.c2() * random.rand(ndims) * (pm - ref)
+                self.c1() * random.rand(ndims) * (ref - pos) +
+                self.c2() * random.rand(ndims) * (pm - pos)
         )
-        pos = self.recombination(self.crossover_with(ctx), ctx.agent.pos + velocity)    
-        return replace(ctx.agent, pos=pos)
+        return self.recombination(ctx.agent,  pos + velocity)
     
 
 class Fips(Pso):
@@ -53,10 +50,9 @@ class Fips(Pso):
     [1] https://ieeexplore.ieee.org/abstract/document/1304843
     """
     def __init__(self, 
-        centroid: PosListGetter = all_neighbors,
-        reference: PosGetter = self_pos,
-        crossover_with: PosGetter = self_pos,
-        recombination: RecombinationMethod = replace_all,
+        centroid: ReferenceGetter = all_neighbors(),
+        reference: ReferenceGetter = self_pos(),
+        recombination: RecombinationMethod = replace_all(),
         c1: Union[float, Callable] = 2.05,
         c2: Union[float, Callable] = 2.05,
         chi: float = .729
@@ -64,15 +60,14 @@ class Fips(Pso):
         super().__init__(
             centroid = centroid,
             reference = reference,
-            crossover_with = crossover_with,
             recombination = recombination,
             c1=c1,c2=c2,chi=chi
         )
      
     def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
-        centers = self.centroid(ctx)
-        ref = self.reference(ctx)
+        centers = self.centroid(ctx).get()
+        ref = self.reference(ctx).average()
         n = len(centers)
         phi = self.c1()+self.c2()
         c = phi / n
@@ -86,8 +81,7 @@ class Fips(Pso):
         pm = pm/w
         sct = random.rand(ndims) * c * w * (pm - ref)  # Social central tendency
         velocity = self.chi() * (ctx.agent.delta + sct)
-        pos = self.recombination(self.crossover_with(ctx), ctx.agent.pos + velocity)    
-        return replace(ctx.agent, pos=pos)
+        return self.recombination(ctx.agent, pos + velocity)
     
 class Barebones(Pso):
     """
@@ -96,26 +90,22 @@ class Barebones(Pso):
     [1] https://ieeexplore.ieee.org/abstract/document/1202251
     """
     def __init__(self, 
-        centroid: PosListGetter = global_best,
-        reference: PosGetter = self_best,
-        crossover_with: PosGetter = self_best,
-        recombination: RecombinationMethod = replace_all
+        centroid: ReferenceGetter = best_neighbor(),
+        reference: ReferenceGetter = self_best(),
+        recombination: RecombinationMethod = replace_all()
     ):
         super().__init__(
             centroid = centroid,
             reference = reference,
-            crossover_with = crossover_with,
             recombination = recombination
         )
     
     def update(self, ctx: UpdateContext)->Agent:
-        centers = self.centroid(ctx)
-        pm = np.sum(self.centroid(ctx), axis=0)/len(centers)
-        ref = self.reference(ctx)
+        pm = self.centroid(ctx).average()
+        ref = self.reference(ctx).average()
         mu = np.divide(np.add(ref, pm),2)
         sd = np.abs(np.subtract(ref, pm))
-        pos = self.recombination(self.crossover_with(ctx), random.normal(loc=mu, scale=sd))    
-        return replace(ctx.agent, pos=pos)     
+        return self.recombination(ctx.agent, random.normal(loc=mu, scale=sd)) 
 
 def get_chi(phi: float=4.1, k: float=.729) -> float:
     return np.sqrt(k) if phi <= 4 else np.sqrt(

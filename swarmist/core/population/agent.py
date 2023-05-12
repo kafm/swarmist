@@ -24,13 +24,13 @@ def do_apply(new_agent: Agent, old_agent: Agent, executor: SearchExecutor)->Agen
     pos = executor.clip(new_agent.pos)
     delta = pos - old_agent.pos 
     fit = executor.evaluate(pos)
-    improved = fit < new_agent.fit
+    improved = fit < old_agent.fit
     best = pos 
     trials = 0
     if not improved:
-        best = new_agent.best
-        fit = new_agent.fit
-        trials = new_agent.trials + 1 
+        best = old_agent.best
+        fit = old_agent.fit
+        trials = old_agent.trials + 1 
     return replace(
         new_agent, 
         delta=delta,

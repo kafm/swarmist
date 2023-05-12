@@ -40,14 +40,10 @@ def fit_to_prob(fits: List[float])->List[int]:
         minFit = min(minFit, fit)
     return [(maxFit - fit) / (maxFit - minFit)/total for fit in fits]
 
-def get_best_k(agents:AgentList, rank:List[int], size: Optional[int] = None)->Union[Agent, List[Agent]]:
-    if not size:
-         return agents[rank[0]]
+def get_best_k(agents:AgentList, rank:List[int], size: Optional[int] = 1)->List[Agent]:
     return [agents[i] for i in rank[:size]]
 
-def get_worse_k(agents:AgentList, rank:List[int], size: Optional[int] = None)->Union[Agent, List[Agent]]:
-    if not size:
-        return agents[rank[-1]]
+def get_worse_k(agents:AgentList, rank:List[int], size: Optional[int] = 1)->List[Agent]:
     return [agents[i] for i in rank[-size:]]
 
 def pick_random(
@@ -72,8 +68,8 @@ def get_agents_rank(agents: AgentList)->GroupInfo:
         size=lambda: gsize,
         fits=lambda: fits,
         probs=lambda: probs,
-        best=lambda size=None: get_best_k(agents, rank, size),
-        worse=lambda size=None:  get_worse_k(agents, rank, size),
+        best=lambda size=1: get_best_k(agents, rank, size),
+        worse=lambda size=1:  get_worse_k(agents, rank, size),
         filter=lambda f: filter(agents,f),
         map=lambda f: map(f, agents), 
         pick_random=lambda size=None, replace=False: pick_random(

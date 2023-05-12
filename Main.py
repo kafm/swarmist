@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 from swarmist.core import *
 from swarmist.algos.helpers import lbest
-from swarmist.algos.pso import Pso, Barebones, Fips
-from swarmist.utils.benchmark import sphere
-from swarmist_bck.PSO import SearchResult, PSO
+from swarmist.algos.jaya import Jaya
+from swarmist.utils.benchmark import sphere, ackley, schwefel
+from swarmist_bck.JAYA import SearchResult, JAYA
 
 numDimensions = 20
 populationSize = 40
@@ -14,8 +14,7 @@ maxEvaluations = 50000
 minFitness = None
 func, bounds = sphere()
 
-res_original: SearchResult = PSO(
-    variant="barebones",
+res_original: SearchResult = JAYA(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
@@ -43,7 +42,7 @@ res_new = search(
             select(all()),
             #apply(Pso().update),
             #apply(Fips().update)
-            apply(Barebones().update),
+            apply(Jaya().update),
             #apply(lambda ctx: ctx.agent),
             #where(lambda a: a.improved)
         )
@@ -69,7 +68,7 @@ def raise_error(e):
 
 res_new.either(
     raise_error, 
-    lambda res: print_best(res,res_original)
+    lambda res: plot_algos(res,res_original)
 )
 
 

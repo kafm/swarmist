@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Optional, List, Tuple, cast
+from typing import Optional, List, Tuple, cast, Callable
 import numpy as np
 
-from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult
+from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult, MaxEvaluationReached, MinFitnessReached
 from .helpers.Population import Population, PopulationIterator
 from .helpers.Individual import Neighborhood, Individual
 
