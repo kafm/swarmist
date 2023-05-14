@@ -11,6 +11,7 @@ KeyValue = Dict[K, V]
 
 Pos = List[float]
 Fit = float
+MaxFit = sys.float_info.max
 
 FitnessFunction = Callable[[Pos],float]
 ConstraintsChecker = Callable[[Pos], Pos]
@@ -28,7 +29,7 @@ class Bounds:
 @dataclass(frozen=True)
 class Evaluation:
     pos: Pos = None
-    fit: Fit = sys.float_info.max
+    fit: Fit = MaxFit
 
 @dataclass(frozen=True)
 class StopCondition:
@@ -68,8 +69,8 @@ class GroupInfo:
     best: Callable[[Optional[int]], AgentList]
     worse: Callable[[Optional[int]], AgentList]
     filter: Callable[[Callable[[Agent,Optional[int]], bool]], AgentList]
-    pick_random: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
-    pick_roulette: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
+    pick_random: Callable[[Optional[int],Optional[bool], Optional[OneOrMoreAgents]], OneOrMoreAgents]
+    pick_roulette: Callable[[Optional[int],Optional[bool], Optional[OneOrMoreAgents]], OneOrMoreAgents]
     map: Callable[[Agent], T]
 
 @dataclass(frozen=True)
@@ -103,6 +104,9 @@ class Initialization:
 @dataclass(frozen=True)
 class UpdateContext(GroupInfo):
     agent: Agent
+    bounds: Bounds
+    pick_random_unique: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
+    pick_roulette_unique: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
 
 SelectionMethod = Callable[[GroupInfo], AgentList]
 UpdateCondition = Callable[[UpdateContext], bool]
@@ -114,7 +118,7 @@ Condition = Callable[[Agent], bool]
 class Update:
     method: UpdateMethod
     selection: SelectionMethod
-    where: Condition
+    where: Condition = None
 
 
 @dataclass(frozen=True)

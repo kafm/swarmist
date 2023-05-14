@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable
 from dataclasses import replace
 import numpy as np
-from swarmist.core.dictionary import Pos, Agent
+from swarmist.core.dictionary import Pos, Agent, MaxFit
 
 RecombinationMethod = Callable[[Agent, Pos], Agent]
 
@@ -35,6 +35,18 @@ def exponential(cr_probability: float = .6)->RecombinationMethod:
 def replace_all()->RecombinationMethod:
     def callback(agent: Agent, target: Pos)->Agent:
         return replace(agent, pos=np.copy(target))
+    return callback
+
+def get_new()->RecombinationMethod:
+    def callback(agent: Agent, target: Pos)->Agent:
+        pos = np.copy(target)
+        return replace(
+            agent, 
+            pos=pos,
+            best=pos,
+            fit=MaxFit,
+            trials=0
+        )
     return callback
 
 def k_random(k:int = 1)->RecombinationMethod:

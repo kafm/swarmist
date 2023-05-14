@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from swarmist.core import *
 from swarmist.algos.helpers import lbest
-from swarmist.algos.jaya import Jaya
+from swarmist.algos.pso import Pso, Fips, Barebones
 from swarmist.utils.benchmark import sphere, ackley, schwefel
 from swarmist_bck.JAYA import SearchResult, JAYA
 
@@ -38,14 +38,11 @@ res_new = search(
         size(populationSize),
         init(lambda ctx: np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        update(
-            select(all()),
-            #apply(Pso().update),
-            #apply(Fips().update)
-            apply(Jaya().update),
-            #apply(lambda ctx: ctx.agent),
-            #where(lambda a: a.improved)
-        )
+        *Barebones().pipeline()
+        # update(
+        #     select(all()),
+        #     apply(Pso().update)
+        # )
     ), 
     #replace=False
 )
@@ -68,7 +65,7 @@ def raise_error(e):
 
 res_new.either(
     raise_error, 
-    lambda res: plot_algos(res,res_original)
+    lambda res: print_best(res,res_original)
 )
 
 

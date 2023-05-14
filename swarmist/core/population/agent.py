@@ -41,9 +41,12 @@ def do_apply(new_agent: Agent, old_agent: Agent, executor: SearchExecutor)->Agen
         improved=improved
     )
 
+def get_update_context(agent: Agent, info: GroupInfo, bounds: Bounds)->UpdateContext:
+    return UpdateContextWrapper(agent, info, bounds).getContext()
+
 def update_agent(update: Update, agent: Agent, info: GroupInfo, executor: SearchExecutor)->Agent:    
     where = update.where 
-    new_agent = update.method(get_update_context(agent, info))
+    new_agent = update.method(get_update_context(agent, info, executor.context().bounds))
     candidate = do_apply(
         new_agent=new_agent, 
         old_agent=agent, 
@@ -51,19 +54,17 @@ def update_agent(update: Update, agent: Agent, info: GroupInfo, executor: Search
     )
     return candidate if not where or where(candidate) else agent
 
-def get_update_context(agent: Agent, info: GroupInfo, replace: bool = False)->UpdateContext:
-    return UpdateContextWrapper(agent, info, replace).getContext()
-
 class UpdateContextWrapper:
-    def __init__(self, agent: Agent, info: GroupInfo, replace:bool=False):
+    def __init__(self, agent: Agent, info: GroupInfo, bounds: Bounds):
         self.agent = agent
         self.info = info
-        self.replace = replace
-        self.picked: AgentList = []
+        self.bounds = bounds
+        self.picked: set[Agent] = {}
 
     def getContext(self)->UpdateContext:
         return UpdateContext(
             agent=self.agent,
+            bounds = self.bounds,
             all = self.info.all,
             size = self.info.size,
             fits = self.info.fits,
@@ -73,17 +74,39 @@ class UpdateContextWrapper:
             best = self._best,
             worse = self._worse,
             pick_random = self._pick_random,
-            pick_roulette = self._pick_roulette
+            pick_roulette = self._pick_roulette,
+            pick_random_unique = self._pick_random_unique,
+            pick_roulette_unique = self._pick_roulette_unique
         )
     
-    def _best(self, k: Optional[int] = None)->Union[Agent, AgentList]:
+    def _best(self, k: Optional[int] = None)->OneOrMoreAgents:
         return self.info.best(k)
     
-    def _worse(self, k: Optional[int] = None)->Union[Agent, AgentList]:
+    def _worse(self, k: Optional[int] = None)->OneOrMoreAgents:
         return self.info.worse(k)
     
-    def _pick_random(self, k: Optional[int] = None)-> OneOrMoreAgents:
-        return self.info.pick_random(self.info.all(),size=k) #TODO deal with exclude
+    def _pick_random_unique(self, k: Optional[int] = None, replace: Optional[bool] = False)-> OneOrMoreAgents:
+        agents = self.info.pick_random(size=k, replace=replace, exclude=self.picked)
+        self._append_picked(agents)
+        return agents
+    
+    def _pick_random(self, k: Optional[int] = None, replace: Optional[bool] = False)-> OneOrMoreAgents:
+        agents = self.info.pick_random(replace=replace,size=k)
+        self._append_picked(agents)
+        return agents
+    
+    def _pick_roulette_unique(self, k: Optional[int] = None, replace: Optional[bool] = True)-> OneOrMoreAgents:
+        agents = self.info.pick_random(size=k, replace=replace, exclude=self.picked, p=self.info.probs)
+        self._append_picked(agents)
+        return agents
 
-    def _pick_roulette(self, k: Optional[int] = None)->OneOrMoreAgents:
-        return self.info.pick_random(self.info.all(),size=k, p=self.info.probs) #TODO deal with exclude
+    def _pick_roulette(self, k: Optional[int] = None, replace: Optional[bool] = True)->OneOrMoreAgents:
+        agents = self.info.pick_random(size=k, replace=replace, p=self.info.probs)
+        self._append_picked(agents)
+        return agents
+    
+    def _append_picked(self, agents: OneOrMoreAgents):
+        if isinstance(agents, Agent):
+            self.picked.add(agents)
+        else:
+            self.picked.update(agents)

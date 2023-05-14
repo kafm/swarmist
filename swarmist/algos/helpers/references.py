@@ -1,5 +1,6 @@
 from typing import cast
 from swarmist.core.dictionary import *
+from swarmist.utils import random
 import numpy as np
 
 @dataclass(frozen=True)
@@ -52,6 +53,42 @@ def all_neighbors()->Callable[[UpdateContext], Reference]:
         )
     return callback
 
+def pick_random(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = ctx.pick_random(size, replace=replace)
+        return Reference(
+            average=average_pos(pos_list, ctx.size()),
+            get=lambda: pos_list
+        )
+    return callback
+
+def pick_random_unique(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = ctx.pick_random_unique(size, replace=replace)
+        return Reference(
+            average=average_pos(pos_list, ctx.size()),
+            get=lambda: pos_list
+        )
+    return callback
+
+def pick_roulette(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = ctx.pick_roulette(size, replace=replace)
+        return Reference(
+            average=average_pos(pos_list, ctx.size()),
+            get=lambda: pos_list
+        )
+    return callback
+
+def pick_roulette_unique(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        pos_list = ctx.pick_roulette_unique(size, replace=replace)
+        return Reference(
+            average=average_pos(pos_list, ctx.size()),
+            get=lambda: pos_list
+        )
+    return callback
+
 def self_best()->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
         pos = ctx.agent.best
@@ -64,6 +101,16 @@ def self_best()->Callable[[UpdateContext], Reference]:
 def self_pos()->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
         pos = ctx.agent.pos
+        return Reference(
+            average=lambda: pos,
+            get=lambda: [pos]
+        )
+    return callback
+
+def random_pos()->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        ndims = ctx.agent.ndims
+        pos = random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ndims)
         return Reference(
             average=lambda: pos,
             get=lambda: [pos]

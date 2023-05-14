@@ -3,6 +3,7 @@ from typing import Callable, Union
 from dataclasses import replace
 import numpy as np
 from swarmist.core.dictionary import *
+from swarmist.core.strategy import select, all
 from swarmist.utils import random
 from .helpers import *
 
@@ -16,6 +17,7 @@ class Pso(UpdateMethodBuilder):
     def __init__(self, 
         centroid: ReferenceGetter = best_neighbor(),
         reference: ReferenceGetter = self_best(),
+        xover_reference: ReferenceGetter = self_pos(),
         recombination: RecombinationMethod = replace_all(),
         c1: Union[float, Callable] = 2.05,
         c2: Union[float, Callable] = 2.05,
@@ -24,11 +26,21 @@ class Pso(UpdateMethodBuilder):
         super().__init__(
             centroid = centroid,
             reference = reference,
+            xover_reference=xover_reference,
             recombination = recombination
         )
         self.c1 = c1 if callable(c1) else lambda: c1
         self.c2 = c2 if callable(c2) else lambda: c2
         self.chi = chi if callable(chi) else lambda: chi
+
+    def pipeline(self)->UpdatePipeline:
+        selection = select(all())
+        return [
+            lambda: Update(
+                selection=selection(),
+                method=self.update
+            )
+        ]
     
     def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
@@ -40,7 +52,8 @@ class Pso(UpdateMethodBuilder):
                 self.c1() * random.rand(ndims) * (ref - pos) +
                 self.c2() * random.rand(ndims) * (pm - pos)
         )
-        return self.recombination(ctx.agent,  pos + velocity)
+        xpos = self.xover_reference(ctx).average()
+        return self.recombination(ctx.agent,  xpos + velocity)
     
 
 class Fips(Pso):
@@ -73,7 +86,6 @@ class Fips(Pso):
         c = phi / n
         pm = np.zeros(ndims)
         w = np.zeros(ndims)
-        pos = ctx.agent.pos
         for p in centers:
             wi = random.rand(ndims)
             pm += wi * p
@@ -81,7 +93,8 @@ class Fips(Pso):
         pm = pm/w
         sct = random.rand(ndims) * c * w * (pm - ref)  # Social central tendency
         velocity = self.chi() * (ctx.agent.delta + sct)
-        return self.recombination(ctx.agent, pos + velocity)
+        xpos = self.xover_reference(ctx).average()
+        return self.recombination(ctx.agent, xpos + velocity)
     
 class Barebones(Pso):
     """

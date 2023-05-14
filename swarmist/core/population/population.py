@@ -72,15 +72,17 @@ def get_agents_rank(agents: AgentList)->GroupInfo:
         worse=lambda size=1:  get_worse_k(agents, rank, size),
         filter=lambda f: filter(agents,f),
         map=lambda f: map(f, agents), 
-        pick_random=lambda size=None, replace=False: pick_random(
-            agents=agents,
-            size=size, 
-            replace=replace
-        ), 
-        pick_roulette=lambda size=None, replace=False: pick_random(
+        pick_random=lambda size=1, replace=False, exclude=None: pick_random(
             agents=agents,
             size=size, 
             replace=replace,
+            exclude=exclude
+        ), 
+        pick_roulette=lambda size=1, replace=True, exclude=None: pick_random(
+            agents=agents,
+            size=size, 
+            replace=replace,
+            exclude=exclude,
             p=probs
         )
     )
