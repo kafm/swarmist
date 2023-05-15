@@ -69,8 +69,8 @@ class GroupInfo:
     best: Callable[[Optional[int]], AgentList]
     worse: Callable[[Optional[int]], AgentList]
     filter: Callable[[Callable[[Agent,Optional[int]], bool]], AgentList]
-    pick_random: Callable[[Optional[int],Optional[bool], Optional[OneOrMoreAgents]], OneOrMoreAgents]
-    pick_roulette: Callable[[Optional[int],Optional[bool], Optional[OneOrMoreAgents]], OneOrMoreAgents]
+    pick_random: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
+    pick_roulette: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
     map: Callable[[Agent], T]
 
 @dataclass(frozen=True)
@@ -113,6 +113,9 @@ UpdateCondition = Callable[[UpdateContext], bool]
 UpdateMethod = Callable[[UpdateContext], Agent]
 RecombinationMethod = Callable[[Pos, Pos], Pos]
 Condition = Callable[[Agent], bool]
+OrderingMethod = Callable[[Agent], float]
+
+
 
 @dataclass(frozen=True)
 class Update:

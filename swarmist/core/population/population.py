@@ -4,7 +4,7 @@ import sys
 import numpy as np
 from ..dictionary import *
 from ..errors import assert_equal_length, try_catch
-from .agent import create_agent
+from .agent import create_agent, get_fits, fit_to_prob
 
 def init_topology(agents: AgentList, builder: TopologyBuilder)->Topology:
     topology = builder(agents) if builder else None
@@ -29,17 +29,6 @@ def init_population(init: Initialization, ctx: SearchContext)->Either[Population
         return get_population(agents, topology)
     return try_catch(callback)
 
-def get_fits(agents: AgentList)->List[float]:
-    return [a.fit for a in agents]
-
-def fit_to_prob(fits: List[float])->List[int]:
-    maxFit,minFit, total = (sys.float_info.max,-sys.float_info.max,0)
-    for fit in fits:
-        total += fit
-        maxFit = max(maxFit, fit)
-        minFit = min(minFit, fit)
-    return [(maxFit - fit) / (maxFit - minFit)/total for fit in fits]
-
 def get_best_k(agents:AgentList, rank:List[int], size: Optional[int] = 1)->List[Agent]:
     return [agents[i] for i in rank[:size]]
 
@@ -48,14 +37,11 @@ def get_worse_k(agents:AgentList, rank:List[int], size: Optional[int] = 1)->List
 
 def pick_random(
     agents: AgentList,  
-    exclude: List[Agent]=None, 
     size: Optional[int] = None, 
     replace:bool=False, 
     p:List[float]= None
 )->Union[Agent,List[Agent]]:
-        return np.random.choice(
-            agents if not exclude else filter(lambda a: a not in exclude, agents),
-            size=size, replace=replace, p=p
+        return np.random.choice(agents, size=size, replace=replace, p=p
         )
 
 def get_agents_rank(agents: AgentList)->GroupInfo:
@@ -70,19 +56,17 @@ def get_agents_rank(agents: AgentList)->GroupInfo:
         probs=lambda: probs,
         best=lambda size=1: get_best_k(agents, rank, size),
         worse=lambda size=1:  get_worse_k(agents, rank, size),
-        filter=lambda f: filter(agents,f),
+        filter=lambda f: filter(f,agents),
         map=lambda f: map(f, agents), 
-        pick_random=lambda size=1, replace=False, exclude=None: pick_random(
+        pick_random=lambda size=1, replace=False: pick_random(
             agents=agents,
             size=size, 
-            replace=replace,
-            exclude=exclude
+            replace=replace
         ), 
-        pick_roulette=lambda size=1, replace=True, exclude=None: pick_random(
+        pick_roulette=lambda size=1, replace=True: pick_random(
             agents=agents,
             size=size, 
             replace=replace,
-            exclude=exclude,
             p=probs
         )
     )

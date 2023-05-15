@@ -4,17 +4,20 @@ import numpy as np
 from swarmist.core import *
 from swarmist.algos.helpers import lbest
 from swarmist.algos.pso import Pso, Fips, Barebones
+from swarmist.algos.jaya import Jaya
+from swarmist.algos.abc import Abc
 from swarmist.utils.benchmark import sphere, ackley, schwefel
-from swarmist_bck.JAYA import SearchResult, JAYA
+from swarmist_bck.ABC import SearchResult, ABC
 
 numDimensions = 20
 populationSize = 40
+halfPopulation = 20
 numGenerations = 1000
 maxEvaluations = 50000
 minFitness = None
-func, bounds = sphere()
+func, bounds = schwefel()
 
-res_original: SearchResult = JAYA(
+res_original: SearchResult = ABC(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
@@ -22,6 +25,8 @@ res_original: SearchResult = JAYA(
     #maxGenerations = numGenerations,
     maxEvaluations = maxEvaluations
 ) 
+
+print("Old ended")
 
 res_new = search(
     search_space=space(
@@ -31,14 +36,13 @@ res_new = search(
         fit_function=minimize(func)
     ),
     stop_condition=until(
-        #max_gen=numGenerations,
-        max_evals=maxEvaluations
+        max_evals=maxEvaluations,
     ),
     search_strategy=using(
         size(populationSize),
         init(lambda ctx: np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Barebones().pipeline()
+        *Abc().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)
@@ -58,6 +62,8 @@ def plot_algos(results: SearchResults, orig_results: SearchResult):
     plt.show()
 
 def print_best(results: SearchResults, orig_results: SearchResult):
+    print(f"New size={len(results)}, Old size={len(orig_results.fitnessByGeneration)}")
+    print(f"Min new={min(results, key=lambda r: r.fit).fit}")
     print(f"New={results[-1].fit}, Old={orig_results.fitnessByGeneration[-1]}")
 
 def raise_error(e): 
@@ -67,6 +73,3 @@ res_new.either(
     raise_error, 
     lambda res: print_best(res,res_original)
 )
-
-
-

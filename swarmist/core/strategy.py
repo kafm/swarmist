@@ -3,7 +3,7 @@ from typing import List, Optional, Callable
 from pymonad.either import Either
 from .dictionary import *
 from .errors import try_catch, assert_not_null, assert_not_empty, assert_at_least, assert_callable, assert_number
-
+import numpy as np
 def size(val: int)->Callable[..., int]:
       def callback()->int:
             param = "Population size"
@@ -44,8 +44,6 @@ def random(size: int = None)->Callable[...,SelectionMethod]:
             return f
       return callback
 
-def max() #TODO
-
 def when(condition: Condition, size: int = None)->Callable[..., SelectionMethod]:
       def callback()->SelectionMethod:
             param = "When condition"
@@ -55,6 +53,34 @@ def when(condition: Condition, size: int = None)->Callable[..., SelectionMethod]
             assert_callable(condition, param)
             return f
       return callback
+
+def aggregator(
+      selection: Callable[..., SelectionMethod], 
+      method: Callable[[AgentList],Agent])->Callable[..., SelectionMethod]:
+      select_param = "Selection method"
+      aggr_param = "Aggregator method"
+      assert_not_null(selection, select_param)
+      assert_not_null(method, aggr_param)
+      assert_callable(selection, select_param)
+      assert_callable(method, aggr_param)
+      def callback(info: GroupInfo):
+            agents = selection(info)
+            if len(agents) > 0:
+                  return [method(agents)]
+            return []
+      return lambda: callback
+
+def biggest(key: OrderingMethod, selection: Callable[..., SelectionMethod] = all)->Callable[..., SelectionMethod]:
+      return aggregator(
+            selection, 
+            lambda agents: max(agents, key=key)
+      )
+
+def smallest(key: OrderingMethod, selection: Callable[..., SelectionMethod] = all)->Callable[..., SelectionMethod]:
+      return aggregator(
+            selection, 
+            lambda agents: min(agents, key=key)
+      )
       
 def select(method: Callable[..., SelectionMethod])->Callable[..., SelectionMethod]:
       def callback()->SelectionMethod:

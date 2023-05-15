@@ -2,8 +2,9 @@ from __future__ import annotations
 from typing import Callable, Union
 from dataclasses import replace
 import numpy as np
+import sys
 from swarmist.core.dictionary import *
-from swarmist.core.strategy import select, all, roulette
+from swarmist.core.strategy import select, all, roulette, biggest, when
 from swarmist.utils import random
 from .helpers import *
 
@@ -16,8 +17,8 @@ class Abc(UpdateMethodBuilder):
     """
     def __init__(self, 
         centroid: ReferenceGetter = pick_random_unique(),
-        reference: ReferenceGetter = self_pos(),
-        xover_reference: ReferenceGetter = self_pos(),
+        reference: ReferenceGetter = self_best(),
+        xover_reference: ReferenceGetter = self_best(),
         recombination: RecombinationMethod = k_random(k=1), 
         replace_pos: ReferenceGetter = random_pos(), 
         limit: int = None
@@ -29,11 +30,23 @@ class Abc(UpdateMethodBuilder):
             recombination = recombination
         ) 
         self.replace_pos = replace_pos
+        self.limit = limit
+
+    def _select_to_replace(self, info: GroupInfo)->AgentList:
+        agents: AgentList = info.all()
+        n = info.size()
+        to_replace = [a for a in agents if a.trials >= self.max_trials(n, a.ndims)]
+        return to_replace
 
     def pipeline(self)->UpdatePipeline:
         employees_selection = select(all())
         onlookers_selection = select(roulette()) 
-        replace_selection = select() #TODO
+        replace_selection = select(
+            biggest(
+                key=lambda a: a.trials,
+                selection=self._select_to_replace
+            )
+        )
         return [
             lambda: Update(
                 selection=employees_selection(),
@@ -52,12 +65,25 @@ class Abc(UpdateMethodBuilder):
         ]
     
     def update(self,ctx: UpdateContext)->Agent: 
+        ndims = ctx.agent.ndims
         pm = self.centroid(ctx).average()
         ref = self.reference(ctx).average()
-        diff = random.uniform(low=-1,high=1) * (ref - pm)
+        diff = np.random.uniform(low=-1,high=1, size=ndims) * (ref - pm)
         xpos = self.xover_reference(ctx).average()
         return self.recombination(ctx.agent, xpos + diff)
         
-        
     def replace(self, ctx: UpdateContext)->Agent:
-        return get_new(ctx.agent, self.replace_pos(ctx))
+        pos = np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.agent.ndims)
+        print(f"Replacing {ctx.agent.index}")
+        return replace(ctx.agent, 
+            pos=pos,
+            best=pos,
+            delta=np.zeros(ctx.agent.ndims),
+            fit=sys.float_info.max,
+            trials=0
+        )
+    
+    def max_trials(self, population_size: int, ndims: int)->int:
+        return int(population_size/2)*ndims if not self.limit else self.limit
+       
+    

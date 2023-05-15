@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, List, Tuple, cast
 import numpy as np
 
-from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult
+from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult, MaxEvaluationReached, MinFitnessReached
 from .helpers.Population import Population, PopulationIterator
 from .helpers.Individual import Neighborhood, Individual
 
@@ -112,6 +112,7 @@ class FoodSource(Individual):
         self.trials:int = 0
 
     def reset(self):
+        print(f"restartign ABC agent")
         self.__init__(self.fitnessFunction,self.bounds,self.ndims, self.index)
     
 

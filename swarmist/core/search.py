@@ -36,15 +36,23 @@ def filter_to_update(update: Update, rank: PopulationInfo)->AgentList[Agent]:
     #     ops.then(lambda agents: agents[:update.limit])
     # return ops(rank)
 
-def get_update_method(updates: List[Update], executor: SearchExecutor)->Callable[[Population], Population]:
-    def callback(p: Population, rank: PopulationInfo)->Population:
-        new_agents = [agent for agent in p.agents]
-        for update in updates: 
-            to_update = filter_to_update(update, rank) 
-            for agent in to_update:
-                new_agent = update_agent(update, agent, rank.group_info[agent.index], executor)
-                new_agents[agent.index] = new_agent
-        return replace(p, agents=new_agents)
+def get_pipeline_executor(updates: List[Update], executor: SearchExecutor)->Callable[[Population], Population]:
+    n = len(updates)
+    def callback(p: Population, index: int = 0)->Population:
+        if index >= n: 
+            return p
+        update: Update = updates[index]
+        rank = get_population_rank(p)
+        new_agents = p.agents.copy()
+        to_update = filter_to_update(update, rank) 
+        for agent in to_update:
+            new_agents[agent.index] = update_agent(
+                update, 
+                agent, 
+                rank.group_info[agent.index], 
+                executor
+            )
+        return callback(replace(p, agents=new_agents), index+1)
     return callback
 
 def get_search_method(
@@ -52,11 +60,11 @@ def get_search_method(
     executor: SearchExecutor, 
     population: Population
 )->Callable[[Population], Either[SearchResults, Exception]]:
-    update_method = get_update_method(strategy.update_pipeline, executor)
+    pipeline = get_pipeline_executor(strategy.update_pipeline, executor)
     new_pop: Population = population
     def callback():
         nonlocal new_pop
-        new_pop = update_method(new_pop, get_population_rank(new_pop))
+        new_pop = pipeline(new_pop)
     return executor.run(callback)
 
 def do_search(                   
@@ -81,7 +89,7 @@ def until(
     def callback(): 
        _fit = None if not fit else float(fit)
        _max_evals = None if not max_evals else int(max_evals)
-       _max_gen = None if not max_gen else int(max_gen)
+       _max_gen = None if  not max_gen else int(max_gen)
        assert_at_least_one_nonnull({
            "fitness max/min": _fit, 
            "maximum number of evaluations": _max_evals,
