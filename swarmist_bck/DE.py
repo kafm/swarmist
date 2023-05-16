@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional, List,  Tuple, cast, Any, Callable
 import numpy as np
 
-from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult
+from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult, MaxEvaluationReached, MinFitnessReached
 from .helpers.Population import Population, PopulationIterator
 from .helpers.Individual import Neighborhood, Individual
 
@@ -132,6 +132,7 @@ def getYDiff(agents: List[Agent], nY: int, f: float) -> List[float]:
     ]) 
 
 def updatePosIfBetterFit(agent: Agent, pos: List[float]):
+    pos = np.clip(pos, agent.bounds.min, agent.bounds.max)
     fit = agent.fitnessFunction(pos)
     if fit < agent.fitness:
         agent.fitness = fit

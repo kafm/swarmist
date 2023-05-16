@@ -15,7 +15,8 @@ def fit_to_prob(fits: List[float])->List[int]:
     n = len(fits)
     nfits = np.zeros(n)
     if min_fit == max_fit: 
-        print(f"fits={fits}")
+        return np.full(n, 1/n)
+        #TODO investigate: print(f"fits={fits}")
     for i in range(n):
         fit = (max_fit - fits[i]) / (max_fit - min_fit)
         nfits[i] = fit
@@ -70,12 +71,7 @@ def update_agent(update: Update, agent: Agent, info: GroupInfo, executor: Search
         old_agent=agent,
         executor=executor
     )
-    if  not where or where(candidate):
-        if not candidate.improved:
-            print(f"Accepting candidate {candidate.index} with trials: {candidate.trials}->{candidate.improved}, where not defined?{not where}")
-        return candidate 
-    return replace(agent, trials=candidate.trials, delta=np.zeros(agent.ndims))
-    #return candidate if not where or where(candidate) else replace(agent, trials=candidate.trials)
+    return candidate if not where or where(candidate) else replace(agent, trials=candidate.trials)
 
 class UpdateContextWrapper:
     def __init__(self, agent: Agent, info: GroupInfo, bounds: Bounds):
@@ -103,10 +99,14 @@ class UpdateContextWrapper:
         )
     
     def _best(self, k: Optional[int] = None)->OneOrMoreAgents:
-        return self.info.best(k)
+        agents = self.info.best(k)
+        self._append_picked(agents)
+        return agents
     
     def _worse(self, k: Optional[int] = None)->OneOrMoreAgents:
-        return self.info.worse(k)
+        agents =self.info.worse(k)
+        self._append_picked(agents)
+        return agents
         
     def _pick_random_unique(self, k: Optional[int] = None, replace: Optional[bool] = False)-> OneOrMoreAgents:
         agents = list(self.info.filter(lambda a: a.index not in self.picked))

@@ -32,7 +32,7 @@ def all()->Callable[...,SelectionMethod]:
 
 def roulette(size: int = None)->Callable[...,SelectionMethod]:
       def callback()->SelectionMethod:
-            f: SelectionMethod = lambda info: info.pick_roulette(size if size else info.size())
+            f: SelectionMethod = lambda info: info.pick_roulette(size=size if size else info.size())
             assert_at_least(size, 1, "Size of agents to pick with roulette")
             return f
       return callback

@@ -6,6 +6,7 @@ import numpy as np
 @dataclass(frozen=True)
 class Reference:  
     average: Callable[..., Pos]
+    sum: Callable[..., Pos] 
     get: List[Pos]
 
 def best_neighbor()->Callable[[UpdateContext], Reference]:
@@ -13,6 +14,7 @@ def best_neighbor()->Callable[[UpdateContext], Reference]:
         pos = ctx.best(1)[0].best
         return Reference(
             average=lambda: pos,
+            sum=lambda: pos,
             get=lambda: [pos]
         )
     return callback
@@ -21,7 +23,8 @@ def k_best_neighbors(size: int= 1)->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
         pos_list = [a.best for a in ctx.best(size)]
         return Reference(
-            average=lambda: average_pos(pos_list, size),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
         )
     return callback
@@ -31,6 +34,7 @@ def worse_neighbor()->Callable[[UpdateContext], Reference]:
         pos = ctx.worse(1)[0].best
         return Reference(
             average=lambda: pos,
+            sum=lambda: pos,
             get=lambda: [pos]
         )
     return callback
@@ -39,7 +43,8 @@ def k_worse_neighbors(size: int= 1)->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
         pos_list = [a.best for a in ctx.worse(size)]
         return Reference(
-            average=lambda: average_pos(pos_list, size),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
         )
     return callback
@@ -48,8 +53,33 @@ def all_neighbors()->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
         pos_list = [a.best for a in  ctx.all()]
         return Reference(
-            average=lambda: average_pos(pos_list, ctx.size()),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
+        )
+    return callback
+
+def rand_to_best(f: float = .5)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        best = ctx.best(1)[0].best
+        a =  ctx.pick_random_unique(1)[0].best
+        pos = f * best + (1 - f) * a
+        return Reference(
+            average=lambda: pos,
+            sum=lambda: pos,
+            get=lambda: [pos]
+        )
+    return callback
+
+def current_to_best(f: float = .5)->Callable[[UpdateContext], Reference]:
+    def callback(ctx: UpdateContext)->Reference:
+        best = ctx.best(1)[0].best
+        current =  ctx.agent.pos
+        pos = current + f * (best - current)
+        return Reference(
+            average=lambda: pos,
+            sum=lambda: pos,
+            get=lambda: [pos]
         )
     return callback
 
@@ -58,7 +88,8 @@ def pick_random(size: int = 1, replace:bool = False)->Callable[[UpdateContext], 
         agents: AgentList = ctx.pick_random(size, replace=replace)
         pos_list = [agent.best for agent in agents]
         return Reference(
-            average=lambda: average_pos(pos_list, ctx.size()),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
         )
     return callback
@@ -68,7 +99,8 @@ def pick_random_unique(size: int = 1, replace:bool = False)->Callable[[UpdateCon
         agents:AgentList = ctx.pick_random_unique(size, replace=replace)
         pos_list = [agent.best for agent in agents]
         return Reference(
-            average=lambda: average_pos(pos_list, ctx.size()),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
         )
     return callback
@@ -77,7 +109,8 @@ def pick_roulette(size: int = 1, replace:bool = False)->Callable[[UpdateContext]
     def callback(ctx: UpdateContext)->Reference:
         pos_list = ctx.pick_roulette(size, replace=replace)
         return Reference(
-            average=lambda: average_pos(pos_list, ctx.size()),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
         )
     return callback
@@ -86,7 +119,8 @@ def pick_roulette_unique(size: int = 1, replace:bool = False)->Callable[[UpdateC
     def callback(ctx: UpdateContext)->Reference:
         pos_list = ctx.pick_roulette_unique(size, replace=replace)
         return Reference(
-            average=lambda: average_pos(pos_list, ctx.size()),
+            average=lambda: average_pos(pos_list),
+            sum=lambda: sum_pos(pos_list),
             get=lambda: pos_list
         )
     return callback
@@ -96,6 +130,7 @@ def self_best()->Callable[[UpdateContext], Reference]:
         pos = ctx.agent.best
         return Reference(
             average=lambda: pos,
+            sum=lambda: pos,
             get=lambda: [pos]
         )
     return callback
@@ -105,6 +140,7 @@ def self_pos()->Callable[[UpdateContext], Reference]:
         pos = ctx.agent.pos
         return Reference(
             average=lambda: pos,
+            sum=lambda: pos,
             get=lambda: [pos]
         )
     return callback
@@ -115,6 +151,7 @@ def random_pos()->Callable[[UpdateContext], Reference]:
         pos = random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ndims)
         return Reference(
             average=lambda: pos,
+            sum=lambda: pos,
             get=lambda: [pos]
         )
     return callback
@@ -157,5 +194,11 @@ def random_pos()->Callable[[UpdateContext], Reference]:
 #     ]) 
 
 
-def average_pos(pos_list: List[Pos], size: int)->Pos:
-    return np.divide(sum(pos_list),size)
+def average_pos(pos_list: List[Pos])->Pos:
+    n = len(pos_list)
+    if n < 2:
+        return pos_list
+    return  np.divide(sum(pos_list),n) 
+
+def sum_pos(pos_list: List[Pos]): 
+    return sum(pos_list)

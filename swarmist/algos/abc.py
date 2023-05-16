@@ -17,8 +17,8 @@ class Abc(UpdateMethodBuilder):
     """
     def __init__(self, 
         centroid: ReferenceGetter = pick_random_unique(),
-        reference: ReferenceGetter = self_best(),
-        xover_reference: ReferenceGetter = self_best(),
+        reference: ReferenceGetter = self_pos(),
+        xover_reference: ReferenceGetter = self_pos(),
         recombination: RecombinationMethod = k_random(k=1), 
         replace_pos: ReferenceGetter = random_pos(), 
         limit: int = None
@@ -39,6 +39,7 @@ class Abc(UpdateMethodBuilder):
         return to_replace
 
     def pipeline(self)->UpdatePipeline:
+        where = lambda a: a.improved
         employees_selection = select(all())
         onlookers_selection = select(roulette()) 
         replace_selection = select(
@@ -51,12 +52,12 @@ class Abc(UpdateMethodBuilder):
             lambda: Update(
                 selection=employees_selection(),
                 method=self.update,
-                where=lambda a: a.improved
+                where=where
             ),
             lambda: Update(
                 selection=onlookers_selection(),
                 method=self.update,
-                where=lambda a: a.improved
+                where=where
             ),
             lambda: Update(
                 selection=replace_selection(),

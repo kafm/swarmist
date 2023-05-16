@@ -41,8 +41,7 @@ def pick_random(
     replace:bool=False, 
     p:List[float]= None
 )->Union[Agent,List[Agent]]:
-        return np.random.choice(agents, size=size, replace=replace, p=p
-        )
+        return np.random.choice(agents, size=size, replace=replace, p=p)
 
 def get_agents_rank(agents: AgentList)->GroupInfo:
     fits = get_fits(agents)

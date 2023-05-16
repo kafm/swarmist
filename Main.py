@@ -2,12 +2,13 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 from swarmist.core import *
-from swarmist.algos.helpers import lbest
+from swarmist.algos.helpers import *
 from swarmist.algos.pso import Pso, Fips, Barebones
 from swarmist.algos.jaya import Jaya
 from swarmist.algos.abc import Abc
+from swarmist.algos.de import De
 from swarmist.utils.benchmark import sphere, ackley, schwefel
-from swarmist_bck.ABC import SearchResult, ABC
+from swarmist_bck.DE import SearchResult, DE
 
 numDimensions = 20
 populationSize = 40
@@ -15,15 +16,16 @@ halfPopulation = 20
 numGenerations = 1000
 maxEvaluations = 50000
 minFitness = None
-func, bounds = schwefel()
+func, bounds = sphere()
 
-res_original: SearchResult = ABC(
+res_original: SearchResult = DE(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
     populationSize = populationSize,
     #maxGenerations = numGenerations,
-    maxEvaluations = maxEvaluations
+    maxEvaluations = maxEvaluations,
+    x = "current-to-best"
 ) 
 
 print("Old ended")
@@ -40,9 +42,9 @@ res_new = search(
     ),
     search_strategy=using(
         size(populationSize),
-        init(lambda ctx: np.random.uniform(ctx.bounds.min, ctx.bounds.max, size=ctx.ndims)),
+        init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Abc().pipeline()
+        *De(xover_reference=current_to_best()).pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)
