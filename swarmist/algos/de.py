@@ -39,7 +39,7 @@ class De(UpdateMethodBuilder):
         ]
     
     def update(self, ctx: UpdateContext)->Agent: 
-        a = self.xover_reference(ctx).average()
+        a = self.xover_reference(ctx).best().pos()
         b = self.centroid(ctx).sum()
         c = self.reference(ctx).sum()
         pos = a + self.f() * (b-c)

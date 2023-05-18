@@ -3,7 +3,7 @@ from typing import Optional, List, Tuple, cast
 import numpy as np
 import copy
 
-from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult
+from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult, MaxEvaluationReached, MinFitnessReached
 from .helpers.Population import Population, PopulationIterator
 from .helpers.Individual import Neighborhood, Individual
 

@@ -77,6 +77,7 @@ class Fips(Pso):
             c1=c1,c2=c2,chi=chi
         )
      
+    #TODO
     def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
         centers = self.centroid(ctx).get()
@@ -93,7 +94,7 @@ class Fips(Pso):
         pm = pm/w
         sct = random.rand(ndims) * c * w * (pm - ref)  # Social central tendency
         velocity = self.chi() * (ctx.agent.delta + sct)
-        xpos = self.xover_reference(ctx).average()
+        xpos = self.xover_reference(ctx).best().pos()
         return self.recombination(ctx.agent, xpos + velocity)
     
 class Barebones(Pso):

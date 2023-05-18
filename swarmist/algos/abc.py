@@ -67,10 +67,10 @@ class Abc(UpdateMethodBuilder):
     
     def update(self,ctx: UpdateContext)->Agent: 
         ndims = ctx.agent.ndims
-        pm = self.centroid(ctx).average()
-        ref = self.reference(ctx).average()
+        pm = self.centroid(ctx).sum()
+        ref = self.reference(ctx).sum()
         diff = np.random.uniform(low=-1,high=1, size=ndims) * (ref - pm)
-        xpos = self.xover_reference(ctx).average()
+        xpos = self.xover_reference(ctx).best().pos()
         return self.recombination(ctx.agent, xpos + diff)
         
     def replace(self, ctx: UpdateContext)->Agent:

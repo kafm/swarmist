@@ -8,9 +8,11 @@ from swarmist.algos.jaya import Jaya
 from swarmist.algos.abc import Abc
 from swarmist.algos.de import De
 from swarmist.algos.tlbo import Tlbo
+from swarmist.algos.gwo import Gwo
 from swarmist.utils.benchmark import sphere, ackley, schwefel
 #from swarmist_bck.PSO import SearchResult, PSO
-from swarmist_bck.TLBO import SearchResult, TLBO
+#from swarmist_bck.TLBO import SearchResult, TLBO
+from swarmist_bck.GWO import SearchResult, GWO
 
 numDimensions = 20
 populationSize = 40
@@ -20,7 +22,7 @@ maxEvaluations = 50000
 minFitness = None
 func, bounds = sphere()
 
-res_original: SearchResult = TLBO(
+res_original: SearchResult = GWO(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
@@ -29,7 +31,7 @@ res_original: SearchResult = TLBO(
     maxEvaluations = maxEvaluations
 ) 
 
-print("Old ended")
+print("Old ended", res_original.best.fitness)
 
 res_new = search(
     search_space=space(
@@ -45,7 +47,7 @@ res_new = search(
         size(populationSize),
         init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Tlbo().pipeline()
+        *Gwo().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)

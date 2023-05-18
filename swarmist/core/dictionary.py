@@ -39,9 +39,15 @@ class StopCondition:
 @dataclass(frozen=True)
 class SearchContext:
     evaluate: FitnessFunction
-    clip: Pos
+    clip: Callable[[Pos], Pos]
     ndims: int
     bounds: Bounds
+    curr_gen: int
+    max_gen: int
+    curr_fit: Fit
+    min_fit: Fit
+    curr_eval: int
+    max_evals: int
 
 @dataclass(frozen=True)
 class Agent: 
@@ -112,6 +118,7 @@ class Initialization:
 @dataclass(frozen=True)
 class UpdateContext(GroupInfo):
     agent: Agent
+    ctx: SearchContext 
 
     def pick_random_unique(self, k: Optional[int] = None, replace: Optional[bool] = False)->AgentList:
         raise NotImplementedError

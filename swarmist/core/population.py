@@ -21,7 +21,7 @@ def create_agent(pos_generator: PosGenerationMethod, index: int, ctx: SearchCont
         improved=True
     )
 
-def do_apply(agent: Agent, old_agent: Agent ,executor: SearchExecutor)->Agent: 
+def do_apply(agent: Agent, old_agent: Agent, executor: SearchExecutor)->Agent: 
     #TODO check if other algorithms works like this
     pos = executor.clip(agent.pos)
     delta = pos - old_agent.pos 
@@ -46,7 +46,7 @@ def do_apply(agent: Agent, old_agent: Agent ,executor: SearchExecutor)->Agent:
 
 def update_agent(update: Update, agent: Agent, info: GroupInfo, executor: SearchExecutor)->Agent:    
     where = update.where 
-    new_agent = update.method(UpdateInfo.of(agent, info))
+    new_agent = update.method(UpdateInfo.of(agent, info, executor.context()))
     candidate = do_apply(
         agent=new_agent, 
         old_agent=agent,
@@ -74,16 +74,11 @@ def init_population(init: Initialization, ctx: SearchContext)->Either[Population
     def callback()->Population:
         agents = create_agents(init.generate_pos, init.population_size,ctx)
         topology = init_topology(agents, init.topology)
-        return get_population(
-            agents=agents, topology=topology, ndims=ctx.ndims, bounds=ctx.bounds
+        return Population(
+            agents=agents, topology=topology, size=len(agents),
+            ndims=ctx.ndims, bounds=ctx.bounds
         )
     return try_catch(callback)
-
-def get_population(agents: AgentList,  bounds: Bounds, ndims: int, topology: Optional[Callable[..., StaticTopology]] = None,)->Population:
-    return Population(
-        agents=agents,topology=topology,
-        size=len(agents), ndims=ndims, bounds=bounds
-    )
 
 def get_population_rank(population: Population)->PopulationInfo:
     agents = population.agents

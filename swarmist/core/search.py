@@ -62,7 +62,7 @@ def get_search_method(
 )->Callable[[Population], Either[SearchResults, Exception]]:
     pipeline = get_pipeline_executor(strategy.update_pipeline, executor)
     new_pop: Population = population
-    def callback():
+    def callback(ctx: SearchContext):
         nonlocal new_pop
         new_pop = pipeline(new_pop)
     return executor.run(callback)

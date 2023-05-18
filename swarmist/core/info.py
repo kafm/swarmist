@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional, List, Callable
 from dataclasses import dataclass
-from .dictionary import Agent, AgentList, Bounds, Fit, GroupInfo, UpdateContext
+from .dictionary import Agent, AgentList, Bounds, Fit, GroupInfo, UpdateContext, SearchContext
 import numpy as np
 
 def get_fits(agents: AgentList)->List[float]:
@@ -68,10 +68,10 @@ class UpdateInfo(UpdateContext):
     picked: List[int]
 
     @classmethod
-    def of(cls, agent: AgentList, info: GroupInfo)->UpdateInfo:
+    def of(cls, agent: AgentList, info: GroupInfo, ctx: SearchContext)->UpdateInfo:
         return cls(
             agent=agent, info=info, picked=[agent.index],
-            bounds=info.bounds, ndims=info.ndims
+            bounds=info.bounds, ndims=info.ndims, ctx=ctx
         )
 
     def all(self)->AgentList:

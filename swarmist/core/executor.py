@@ -1,11 +1,10 @@
 from __future__ import annotations
 from typing import Optional
 from pymonad.either import Right, Left, Either
-from dataclasses import replace
 import sys
 import numpy as np
 from .dictionary import *
-from .errors import SearchEnded, try_catch
+from .errors import SearchEnded
 
 
 class SearchExecutor:
@@ -18,17 +17,13 @@ class SearchExecutor:
         min_fit: Optional[float], 
         max_evals:  Optional[int],
     ):
-        self.search_ctx = SearchContext(
-             self.evaluate, 
-             self.clip,
-             ndims, 
-             bounds
-        )
+        self.ndims = ndims
+        self.bounds = bounds
         self.fit_func:FitnessFunction = fit_func
         self.constraints = constraints
         self.min_fit = min_fit
         self.max_evals = max_evals
-        self.max_gen = max_gen
+        self.max_gen = sys.maxsize if not max_gen else max_gen
         self.curr_fit: Fit = sys.float_info.max
         self.curr_pos: Pos = None
         self.curr_gen:int = 0
@@ -37,12 +32,22 @@ class SearchExecutor:
         self._ended = False
 
     def context(self)->SearchContext:
-        return self.search_ctx
+        return SearchContext(
+             evaluate=self.evaluate, 
+             clip=self.clip,
+             ndims=self.ndims, 
+             bounds=self.bounds,
+             curr_gen=self.curr_gen,
+             max_gen=self.max_gen,
+             curr_fit=self.curr_fit,
+             min_fit=self.min_fit,
+             curr_eval =self.curr_eval,
+             max_evals=self.max_evals
+        )
     
     def clip(self, pos: Pos)->Pos:
-        bounds = self.search_ctx.bounds
         cs = self.constraints
-        new_pos = np.clip(pos, bounds.min, bounds.max)
+        new_pos = np.clip(pos, self.bounds.min, self.bounds.max)
         return new_pos if not cs else cs(new_pos)
 
     def evaluate(self, pos :Pos)->Fit:
@@ -56,7 +61,7 @@ class SearchExecutor:
     def run(self, callback: Callable)->Either[SearchResults, Exception]:
         while self._next():
             try: 
-                callback()
+                callback(self.context())
             except Exception as e: 
                 if not isinstance(e, SearchEnded):
                     return Left(e)
@@ -71,7 +76,7 @@ class SearchExecutor:
             self._results[self.curr_gen] = Evaluation(pos,fit)
 
     def _next(self)->bool:
-        if not self._ended and (not self.max_gen or self.curr_gen < self.max_gen):
+        if not self._ended and self.curr_gen < self.max_gen:
             self.curr_gen += 1
             self._results.append(Evaluation(self.curr_pos, self.curr_fit))      
             return True

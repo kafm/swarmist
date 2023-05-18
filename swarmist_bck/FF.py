@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Optional, List, Tuple, cast
+from typing import Optional, List, Tuple, cast, Callable
 import numpy as np
 
-from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult
+from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult, MaxEvaluationReached, MinFitnessReached
 from .helpers.Population import Population, PopulationIterator
 from .helpers.Individual import Neighborhood, Individual
 
@@ -70,16 +70,18 @@ def search(env: Env, population: Population, updateMethod: Callable[[Firefly, Ne
 
 def fireflyUpdate(ff: Firefly, neighbors: Neighborhood, beta: float, gamma: float, delta: float):
     ff.alpha *= delta
+    pos = np.copy(ff.pos)
     for n in neighbors.individuals:
         if n.fitness < ff.fitness:
-            d = n.pos - ff.pos
+            d = n.pos - pos
             ffBeta = beta * np.exp(-gamma *  np.square(d))
             e = ff.alpha * (np.random.random(ff.ndims) - 0.5)
-            ff.pos = np.clip(ff.pos + ffBeta * d + e, ff.bounds.min, ff.bounds.max)
+            pos = pos + ffBeta * d + e
         oldFit = ff.fitness
-        ff.fitness = ff.fitnessFunction(ff.pos)
+        ff.fitness = ff.fitnessFunction(pos)
+        ff.pos = pos
         if oldFit > ff.fitness:
-            ff.best = ff.pos
+            ff.best = pos
     
 class Firefly(Individual):
     def __init__(

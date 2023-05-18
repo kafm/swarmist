@@ -42,7 +42,7 @@ class Jaya(UpdateMethodBuilder):
         ref = self.reference(ctx).sum()
         abs_pos = np.abs(ctx.agent.pos)
         diff = random.rand(ndims)*(pm - abs_pos) - random.rand(ndims)*(ref - abs_pos)
-        xpos = self.xover_reference(ctx).average()
+        xpos = self.xover_reference(ctx).best().pos()
         return self.recombination(ctx.agent, xpos + diff)
 
 
