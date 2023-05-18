@@ -9,10 +9,11 @@ from swarmist.algos.abc import Abc
 from swarmist.algos.de import De
 from swarmist.algos.tlbo import Tlbo
 from swarmist.algos.gwo import Gwo
+from swarmist.algos.wo import Wo
 from swarmist.utils.benchmark import sphere, ackley, schwefel
 #from swarmist_bck.PSO import SearchResult, PSO
 #from swarmist_bck.TLBO import SearchResult, TLBO
-from swarmist_bck.GWO import SearchResult, GWO
+from swarmist_bck.WO import SearchResult, WO
 
 numDimensions = 20
 populationSize = 40
@@ -22,7 +23,7 @@ maxEvaluations = 50000
 minFitness = None
 func, bounds = sphere()
 
-res_original: SearchResult = GWO(
+res_original: SearchResult = WO(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
@@ -47,7 +48,7 @@ res_new = search(
         size(populationSize),
         init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Gwo().pipeline()
+        *Wo().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)

@@ -76,8 +76,9 @@ class Reference:
         pos_list = [a.best for a in agents]
         return cls(agents, pos_list, default)
     
-    def avg(self)->Pos:
-        return np.average(self.pos_list, axis=0)
+    def avg(self, transformer: Callable[[Pos], Pos] = None)->Pos:
+        pos_list = self.pos_list if not transformer else list(map(transformer, self.pos_list))
+        return np.average(pos_list, axis=0)
 
     def sum(self)->Pos:
         return np.sum(self.pos_list, axis=0)
