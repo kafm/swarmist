@@ -16,7 +16,7 @@ class Jaya(UpdateMethodBuilder):
     def __init__(self, 
         centroid: ReferenceGetter = best_neighbor(),
         reference: ReferenceGetter = worse_neighbor(),
-        xover_reference: ReferenceGetter = self_pos(),
+        xover_reference: ReferenceGetter = self_best(),
         recombination: RecombinationMethod = replace_all()
     ):
         super().__init__(
@@ -38,10 +38,12 @@ class Jaya(UpdateMethodBuilder):
 
     def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
-        pm = self.centroid(ctx).average()
-        ref = self.reference(ctx).average()
+        pm = self.centroid(ctx).sum()
+        ref = self.reference(ctx).sum()
         abs_pos = np.abs(ctx.agent.pos)
         diff = random.rand(ndims)*(pm - abs_pos) - random.rand(ndims)*(ref - abs_pos)
         xpos = self.xover_reference(ctx).average()
         return self.recombination(ctx.agent, xpos + diff)
+
+
     

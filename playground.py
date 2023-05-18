@@ -1,18 +1,23 @@
-
-from functools import reduce
-from operator import add
+from typing import List
+from collections import namedtuple
+from swarmist.core.dictionary import Agent
+from dataclasses import fields, dataclass
 import numpy as np
 
+#agent_fields = {field.name: field.type for field in fields(Agent)}
+#print(agent_fields)
+# arr = np.array([[1,2, 4],[2,3, 6],[4,5, 10]])
+# print(np.average(arr, axis=0))
+# print(np.sum(arr, axis=0))
+
+@dataclass(frozen=True)
+class Test:
+    els: List[int]
 
 
-
-def average_pos(pos_lis, size):
-    return np.divide(sum(pos_lis),size)
-
-def sum_pos(pos_list): 
-    return sum(pos_list)
-
-size = 20
-pos = np.random.uniform(low=0, high=10,size=size)
-pos2 = np.random.uniform(low=0, high=10,size=size)
-print(f"pos={pos}, pos2={pos2},avg={average_pos([pos, pos2], 2)}, sum={sum_pos([pos, pos2])}")
+test = Test([1,2])
+print(test.els)
+test.els.append(3)
+test.els.extend([4,5])
+print(test.els)
+print(test.els[:1])

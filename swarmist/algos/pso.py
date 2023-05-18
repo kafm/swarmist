@@ -85,7 +85,7 @@ class Fips(Pso):
         phi = self.c1()+self.c2()
         c = phi / n
         pm = np.zeros(ndims)
-        w = np.zeros(ndims)
+        w = np.zeros(n)
         for p in centers:
             wi = random.rand(ndims)
             pm += wi * p

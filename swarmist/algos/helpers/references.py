@@ -1,204 +1,103 @@
-from typing import cast
-from swarmist.core.dictionary import *
+from __future__ import annotations
+from typing import Callable, List
+from dataclasses import dataclass
+from swarmist.core.dictionary import UpdateContext, Agent, AgentList, Pos, Fit
 from swarmist.utils import random
 import numpy as np
 
-@dataclass(frozen=True)
-class Reference:  
-    average: Callable[..., Pos]
-    sum: Callable[..., Pos] 
-    get: List[Pos]
-
 def best_neighbor()->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos = ctx.best(1)[0].best
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
-    return callback
+    return k_best_neighbors(1)
 
 def k_best_neighbors(size: int= 1)->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos_list = [a.best for a in ctx.best(size)]
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
+    return lambda ctx: Reference.of(ctx.best(size))
 
 def worse_neighbor()->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos = ctx.worse(1)[0].best
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
-    return callback
+    return k_worse_neighbors(1)
 
 def k_worse_neighbors(size: int= 1)->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos_list = [a.best for a in ctx.worse(size)]
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
+    return lambda ctx: Reference.of(ctx.worse(size))
 
 def all_neighbors()->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos_list = [a.best for a in  ctx.all()]
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
+    return lambda ctx: Reference.of(ctx.all())
 
 def rand_to_best(f: float = .5)->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
-        best = ctx.best(1)[0].best
-        a =  ctx.pick_random_unique(1)[0].best
-        pos = f * best + (1 - f) * a
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
+        best: Agent = ctx.best(1)[0]
+        a: Agent =  ctx.pick_random_unique(1)[0]
+        pos = f * best.best + (1 - f) * a.best
+        return Reference.of([best, a], default=pos)
     return callback
 
 def current_to_best(f: float = .5)->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
-        best = ctx.best(1)[0].best
-        current =  ctx.agent.pos
-        pos = current + f * (best - current)
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
+        best: Agent = ctx.best(1)[0]
+        current: Agent =  ctx.agent
+        pos = current + f * (best.best - current.best)
+        return Reference.of([best, current], default=pos)
     return callback
 
 def pick_random(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        agents: AgentList = ctx.pick_random(size, replace=replace)
-        pos_list = [agent.best for agent in agents]
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
+    return lambda ctx: Reference.of(ctx.pick_random(size, replace=replace))
 
 def pick_random_unique(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        agents:AgentList = ctx.pick_random_unique(size, replace=replace)
-        pos_list = [agent.best for agent in agents]
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
+    return lambda ctx: Reference.of(ctx.pick_random_unique(size, replace=replace))
 
 def pick_roulette(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos_list = ctx.pick_roulette(size, replace=replace)
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
-
+    return lambda ctx: Reference.of(ctx.pick_roulette(size, replace=replace))
+    
 def pick_roulette_unique(size: int = 1, replace:bool = False)->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos_list = ctx.pick_roulette_unique(size, replace=replace)
-        return Reference(
-            average=lambda: average_pos(pos_list),
-            sum=lambda: sum_pos(pos_list),
-            get=lambda: pos_list
-        )
-    return callback
+    return lambda ctx: Reference.of(ctx.pick_roulette_unique(size, replace=replace))
 
 def self_best()->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos = ctx.agent.best
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
-    return callback
+    return lambda ctx: Reference.of([ctx.agent], default=ctx.agent.best)
 
 def self_pos()->Callable[[UpdateContext], Reference]:
-    def callback(ctx: UpdateContext)->Reference:
-        pos = ctx.agent.pos
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
-    return callback
+    return lambda ctx: Reference.of([ctx.agent], default=ctx.agent.pos)
 
 def random_pos()->Callable[[UpdateContext], Reference]:
     def callback(ctx: UpdateContext)->Reference:
-        ndims = ctx.agent.ndims
-        pos = random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ndims)
-        return Reference(
-            average=lambda: pos,
-            sum=lambda: pos,
-            get=lambda: [pos]
-        )
+        pos = random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size= ctx.agent.ndims)
+        return Reference.of([ctx.agent], default=pos)
     return callback
 
-# def stochastic_cog(ctx: UpdateContext)->List[Pos]:
-#     ndims = ctx.agent.ndims
-#     w = np.zeros(ndims)
-#     pm = np.zeros(ndims)
-#     neighbors = ctx.all()
-#     for neighbor in neighbors:
-#         wi = np.random.rand(ndims)
-#         w += wi
-#         pm += np.multiply(wi, neighbor.best)
-#     return [np.divide(pm, w)]
-
-#TODO 
-# def rand_to_best(ctx: UpdateContext, y: int, f: float, gamma: float)->List[Pos]:
-#     best = ctx.info.best()
-#     choices: AgentList = ctx.info.pick_random(exclude=[ctx.agent, best])
-#     a = gamma * best.pos + (1 - gamma) * a.pos  
-#     return get_y_diff(choices, y * 2, f)
-
-# def currentToBestUpdate(agent: Agent, neighbors: Neighborhood, crMethod: CrossoverMethod, y: int, f: float):
-#     best: Agent = neighbors.best()
-#     nY = y * 2
-#     choices: List[Agent] = neighbors.getRandomIndividuals(k=nY,excludeIndexes=[agent.index, best.index])
-#     a = agent.pos + f * (best.pos - agent.pos)
-#     diff = getYDiff(choices, nY , f)
-#     pos = crMethod(
-#         agent.pos, 
-#         lambda i : a[i] + diff[i]
-#     )
-#     updatePosIfBetterFit(agent, pos)
-
-# def get_y_diff(agents: List[Agent], n_y: int, f: float) -> List[float]:
-#     middlePoint = int(len(agents)/n_y)
-#     return f * sum([
-#         agents[i].pos - agents[i+middlePoint].pos 
-#         for i in range(middlePoint)
-#     ]) 
+DefaultRefPos = str | Pos
 
 
-def average_pos(pos_list: List[Pos])->Pos:
-    n = len(pos_list)
-    if n < 2:
-        return pos_list
-    return  np.divide(sum(pos_list),n) 
+#TODO check better way to deal with  reference composed of one agent and reference composed by more than one agent
+#TODO make simpler and better
+@dataclass(frozen=True)
+class Reference: 
+    agents: AgentList
+    pos_list: List[Pos]
+    default_arr: DefaultRefPos
 
-def sum_pos(pos_list: List[Pos]): 
-    return sum(pos_list)
+    @classmethod
+    def of(cls, agents: AgentList, default: DefaultRefPos = "avg")->Reference:
+        pos_list = [a.best for a in agents]
+        return cls(agents, pos_list, default)
+    
+    def avg(self)->Pos:
+        return np.average(self.pos_list, axis=0)
+
+    def sum(self)->Pos:
+        return np.sum(self.pos_list, axis=0)
+    
+    def best(self)->Reference: 
+        return Reference.of([min(self.agents, key=lambda a: a.fit)])
+    
+    def fit(self)->Reference:
+        return self.best_agent().fit
+    
+    def first(self)->Reference:
+        return Reference.of(self.agents[:1])
+    
+    def pos(self) -> Pos: 
+        if isinstance(self.default_arr, (list, np.ndarray)):
+            return np.array(self.default_arr)
+        return self.sum() if self.default_arr == "sum" else self.avg() 
+    
+    def best_agent(self)->Agent:
+        return min(self.agents, key=lambda a: a.fit)
+    
+    def __array__(self) -> np.ndarray:
+        return self.pos()

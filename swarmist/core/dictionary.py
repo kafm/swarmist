@@ -1,11 +1,10 @@
 from __future__ import annotations
-from typing import Callable, Dict, Optional, List, TypeVar, Tuple, Union
-from dataclasses import dataclass, astuple
+from typing import Callable, Dict, Optional, List, TypeVar
+from dataclasses import dataclass
 import sys
 
 K = TypeVar("K")
 V = TypeVar("V")
-T = TypeVar("T")
 
 KeyValue = Dict[K, V]
 
@@ -44,7 +43,6 @@ class SearchContext:
     ndims: int
     bounds: Bounds
 
-
 @dataclass(frozen=True)
 class Agent: 
     index: int
@@ -57,26 +55,34 @@ class Agent:
     improved: bool
 
 AgentList = List[Agent]
-OneOrMoreAgents = Agent | AgentList
-T = TypeVar("T")
 
 @dataclass(frozen=True)
 class GroupInfo: 
-    all: Callable[[], AgentList] 
-    size: Callable[[], int]
-    fits: List[Fit]
-    probs: List[float]
-    best: Callable[[Optional[int]], AgentList]
-    worse: Callable[[Optional[int]], AgentList]
-    filter: Callable[[Callable[[Agent,Optional[int]], bool]], AgentList]
-    pick_random: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
-    pick_roulette: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
-    map: Callable[[Agent], T]
+    bounds: Bounds
+    ndims: int
+    #fits: List[Fit]
+    #probs: List[float]
+    
+    def all()->AgentList:
+        raise NotImplementedError
+    
+    def size()->int:
+        raise NotImplementedError
+    
+    def best(size: int = 1)->AgentList:
+        raise NotImplementedError()
+    
+    def worse(size: int = 1)->AgentList:
+        raise NotImplementedError()
+    
+    def filter(f: Callable[[Agent], bool])->AgentList: 
+        raise NotImplementedError()
 
-@dataclass(frozen=True)
-class AgentGroup:
-    agents: AgentList
-    rank: Callable(..., GroupInfo)
+    def pick_random(k: int = 1, replace: bool = False)->AgentList:
+        raise NotImplementedError()
+        
+    def pick_roulette(k: int = 1, replace: bool = False)->AgentList:
+        raise NotImplementedError()
 
 @dataclass(frozen=True)
 class PopulationInfo:
@@ -88,6 +94,8 @@ class Population:
     agents: AgentList
     topology: Topology #TODO check topology
     size: int
+    ndims: int
+    bounds: Bounds
 
 PosGenerationMethod = Callable[[SearchContext], Pos]
 StaticTopology = List[List[int]]
@@ -104,9 +112,12 @@ class Initialization:
 @dataclass(frozen=True)
 class UpdateContext(GroupInfo):
     agent: Agent
-    bounds: Bounds
-    pick_random_unique: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
-    pick_roulette_unique: Callable[[Optional[int],Optional[bool]], OneOrMoreAgents]
+
+    def pick_random_unique(self, k: Optional[int] = None, replace: Optional[bool] = False)->AgentList:
+        raise NotImplementedError
+    
+    def pick_roulette_unique(self, k: Optional[int] = None, replace: Optional[bool] = True)->AgentList:
+        raise NotImplementedError
 
 SelectionMethod = Callable[[GroupInfo], AgentList]
 UpdateCondition = Callable[[UpdateContext], bool]

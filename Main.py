@@ -7,8 +7,10 @@ from swarmist.algos.pso import Pso, Fips, Barebones
 from swarmist.algos.jaya import Jaya
 from swarmist.algos.abc import Abc
 from swarmist.algos.de import De
+from swarmist.algos.tlbo import Tlbo
 from swarmist.utils.benchmark import sphere, ackley, schwefel
-from swarmist_bck.DE import SearchResult, DE
+#from swarmist_bck.PSO import SearchResult, PSO
+from swarmist_bck.TLBO import SearchResult, TLBO
 
 numDimensions = 20
 populationSize = 40
@@ -18,14 +20,13 @@ maxEvaluations = 50000
 minFitness = None
 func, bounds = sphere()
 
-res_original: SearchResult = DE(
+res_original: SearchResult = TLBO(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
     populationSize = populationSize,
     #maxGenerations = numGenerations,
-    maxEvaluations = maxEvaluations,
-    x = "current-to-best"
+    maxEvaluations = maxEvaluations
 ) 
 
 print("Old ended")
@@ -44,7 +45,7 @@ res_new = search(
         size(populationSize),
         init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *De(xover_reference=current_to_best()).pipeline()
+        *Tlbo().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)
