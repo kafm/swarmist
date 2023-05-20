@@ -78,7 +78,7 @@ def fireflyUpdate(ff: Firefly, neighbors: Neighborhood, beta: float, gamma: floa
             e = ff.alpha * (np.random.random(ff.ndims) - 0.5)
             pos = pos + ffBeta * d + e
         oldFit = ff.fitness
-        ff.fitness = ff.fitnessFunction(pos)
+        ff.fitness = ff.fitnessFunction(np.clip(pos, ff.bounds.min, ff.bounds.max))
         ff.pos = pos
         if oldFit > ff.fitness:
             ff.best = pos

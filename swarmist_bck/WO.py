@@ -6,7 +6,8 @@ from .helpers.Env import Env, Bounds, FitnessFunction, SearchResult, MaxEvaluati
 from .helpers.Population import Population, PopulationIterator
 from .helpers.Individual import Neighborhood, Individual
 
-
+#a=2
+#b=.5
 def WO(
     fitnessFunction: FitnessFunction,
     bounds: Bounds,
@@ -14,6 +15,7 @@ def WO(
     populationSize: int = 30,
     topology: Optional[str] = None,
     neighborhoodRange: Optional[int] = None,
+    a: float = 2,
     spiral: float = .5,
     maxGenerations: Optional[int] = None,
     maxEvaluations: Optional[int] = None,
@@ -41,15 +43,16 @@ def WO(
         neighborhoodRange=neighborhoodRange
     )
   
-    return search(env, population, spiral)
+    return search(env, population, a, spiral)
 
 
-def search(env: Env, population: Population, spiral: float) -> SearchResult[Whale]:
+def search(env: Env, population: Population, a: float, spiral: float) -> SearchResult[Whale]:
     try:
         fitnessByGeneration: List[float] = []
+        a_step = a/env.maxGenerations
         while (env.next()):
             iter: PopulationIterator[Whale] = population.iterator()
-            a = 2 - env.currGen * (2 / env.maxGenerations)
+            a -= a_step #TODO - env.currGen * (2 / env.maxGenerations)
             while (iter.hasNext()):
                 individual, neighbors = cast(Tuple[Whale, Neighborhood], iter.next())
                 whaleUpdate(individual, neighbors, a, spiral)
@@ -66,9 +69,10 @@ def search(env: Env, population: Population, spiral: float) -> SearchResult[Whal
 
 def whaleUpdate(w: Whale, neighbors: Neighborhood, a: float, spiral: float):
     p = np.random.uniform()
-    A = np.full(w.ndims, 2 * a * np.random.random() - a)
-    if p < 0.5:
-        if abs(A[0]) < 1:
+    if p < .5:
+        r = np.random.uniform(size=w.ndims)
+        A = ( 2 * np.multiply(a, r) ) - a
+        if np.linalg.norm(A) < 1:
             w.pos = encircle(w, neighbors.best(), A)
         else:
             w.pos = explore(w, neighbors, A)
@@ -78,20 +82,24 @@ def whaleUpdate(w: Whale, neighbors: Neighborhood, a: float, spiral: float):
  
 def encircle(w: Whale, best: Whale, A: List[float])->List[float]:
     C =  2 * np.random.random(size=w.ndims)
-    D = abs( C * best.pos - w.pos )
-    return best.pos - A * D
+    D = np.abs( C * best.pos - w.pos )
+    pos = best.pos - A * D
+    return np.clip(pos, w.bounds.min, w.bounds.max)
 
 def attack(w: Whale, best: Whale, spiral: float)->List[float]:
-    D = abs(best.pos - w.pos)
+    D =np.abs(best.pos - w.pos)
     l = np.random.uniform(-1.0, 1.0, size=w.ndims)
-    return D * np.exp(spiral*l) * np.cos(2.0*np.pi*l) + best.pos
+    pos = D * np.exp(spiral*l) * np.cos(2.0*np.pi*l) + best.pos
+    return np.clip(pos, w.bounds.min, w.bounds.max)
 
 def explore(w: Whale, neighbors: Neighborhood, A: List[float]):
     rW = neighbors.getRandomIndividual(excludeIndexes=[w.index])
     C = 2 * np.random.random(size=w.ndims)
-    D = abs( C * rW.pos - w.pos )    
-    return rW.pos - A * D
-    
+    D = np.abs( C * rW.pos - w.pos )   
+    pos = rW.pos - A * D
+    return np.clip(pos, w.bounds.min, w.bounds.max)
+
+
 class Whale(Individual):
     def __init__(
         self,

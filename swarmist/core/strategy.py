@@ -36,6 +36,13 @@ def roulette(size: int = None)->Callable[...,SelectionMethod]:
             assert_at_least(size, 1, "Size of agents to pick with roulette")
             return f
       return callback
+
+def with_probability(p: float = .25)->Callable[..., SelectionMethod]:
+      def callback()->SelectionMethod:
+            f: SelectionMethod = lambda info: info.filter(lambda _: np.random.uniform() < p)
+            assert_at_least(size, 1, "Size of agents to pick with roulette")
+            return f
+      return callback
             
 def random(size: int = None)->Callable[...,SelectionMethod]:
       def callback()->SelectionMethod:

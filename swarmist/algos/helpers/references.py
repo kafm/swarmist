@@ -76,12 +76,23 @@ class Reference:
         pos_list = [a.best for a in agents]
         return cls(agents, pos_list, default)
     
+    def filter(self, condition: Callable[[Agent], Pos])->Reference:
+        agents = [a for a in self.agents if condition(a)]
+        return Reference.of(agents)
+    
+    def reduce(self, accumulator: Callable[[Agent], Pos], initial_value: Pos = None)->Pos:
+        value = initial_value
+        for a in self.agents: 
+            value = accumulator(a, value)
+        return value
+    
     def avg(self, transformer: Callable[[Pos], Pos] = None)->Pos:
         pos_list = self.pos_list if not transformer else list(map(transformer, self.pos_list))
         return np.average(pos_list, axis=0)
 
-    def sum(self)->Pos:
-        return np.sum(self.pos_list, axis=0)
+    def sum(self, transformer: Callable[[Pos], Pos] = None)->Pos:
+        pos_list = self.pos_list if not transformer else list(map(transformer, self.pos_list))
+        return np.sum(pos_list, axis=0)
     
     def best(self)->Reference: 
         return Reference.of([min(self.agents, key=lambda a: a.fit)])

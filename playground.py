@@ -21,3 +21,8 @@ test.els.append(3)
 test.els.extend([4,5])
 print(test.els)
 print(test.els[:1])
+
+r = np.random.uniform(size=20)
+print(r)
+print(np.linalg.norm(r))                                               
+print(np.abs(r))

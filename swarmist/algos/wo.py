@@ -17,6 +17,7 @@ class Wo(UpdateMethodBuilder):
         reference: ReferenceGetter = self_best(),
         explore_reference: ReferenceGetter = pick_random_unique(),
         recombination: RecombinationMethod = replace_all(),
+        a: float = 2,
         spiral: float = .5
     ):
         super().__init__(
@@ -25,27 +26,27 @@ class Wo(UpdateMethodBuilder):
             recombination = recombination
         ) 
         self.explore_reference = explore_reference
+        self.a = a if callable(a) else lambda: a
         self.spiral = spiral if callable(spiral) else lambda: spiral
 
     def pipeline(self)->UpdatePipeline:
-        where = lambda a: a.improved
         selection = select(all())
         return [
             lambda: Update(
                 selection=selection(),
-                method=self.update,
-                where=where
+                method=self.update
             )
         ]
         
     def update(self,ctx: UpdateContext)->Agent:
         ndims = ctx.ndims
-        a = 2 - ctx.ctx.curr_gen * (2 / ctx.ctx.max_gen) 
-        A = np.full(ndims, 2 * a * np.random.random() - a)
-        pos:Pos = if_then(
+        a = self.a()
+        a = a - ctx.ctx.curr_gen * (a / ctx.ctx.max_gen) 
+        A = ( 2 * np.multiply(a, np.random.random(size=ndims)) ) - a
+        pos = if_then(
             lambda: np.random.uniform() < .5,
             lambda: if_then(
-                lambda: abs(A[0]) < 1,
+                lambda: np.linalg.norm(A) < 1,
                 lambda: self.encircle(ctx, A),
                 lambda: self.explore(ctx, A)    
             ),
@@ -53,23 +54,23 @@ class Wo(UpdateMethodBuilder):
         )
         return self.recombination(ctx.agent, pos)
  
-    def encircle(self, ctx: UpdateContext, A: List[float])->List[float]:
+    def encircle(self, ctx: UpdateContext, A: List[float])->Pos:
         C =  2 * np.random.random(size=ctx.ndims)
         best = self.centroid(ctx).sum()
         pos = self.reference(ctx).sum()
-        D = abs( C * best - pos )
+        D = np.abs( C * best - pos )
         return best - A * D
 
-    def attack(self, ctx: UpdateContext)->List[float]:
+    def attack(self, ctx: UpdateContext)->Pos:
         best = self.centroid(ctx).sum()
         pos = self.reference(ctx).sum()
-        D = abs(best - pos)
+        D = np.abs(best - pos)
         l = np.random.uniform(-1.0, 1.0, size=ctx.ndims)
         return D * np.exp(self.spiral()*l) * np.cos(2.0*np.pi*l) + best
 
-    def explore(self, ctx: UpdateContext, A: List[float]):
+    def explore(self, ctx: UpdateContext, A: List[float])->Pos:
         exp = self.explore_reference(ctx).sum()
         pos = self.explore_reference(ctx).sum()
         C = 2 * np.random.random(size=ctx.ndims)
-        D = abs( C * exp - pos )    
+        D = np.abs( C * exp - pos )  
         return exp - A * D

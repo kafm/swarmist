@@ -88,7 +88,7 @@ class ProbabilityFilterInterator(PopulationIterator):
         if self.index < self.length:
             if np.random.uniform() < self.p:
                 return True
-            elif self.index < self.length-1:
+            elif self.index < self.length:
                 self.index += 1
                 return self.hasNext()
         return False

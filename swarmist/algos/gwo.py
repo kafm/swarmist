@@ -15,13 +15,15 @@ class Gwo(UpdateMethodBuilder):
     def __init__(self, 
         centroid: ReferenceGetter = k_best_neighbors(3),
         reference: ReferenceGetter = self_best(),
-        recombination: RecombinationMethod = replace_all()
+        recombination: RecombinationMethod = replace_all(),
+        a: float = 2
     ):
         super().__init__(
             centroid = centroid,
             reference = reference,
             recombination = recombination
         ) 
+        self.a = a if callable(a) else lambda: a
 
     def pipeline(self)->UpdatePipeline:
         where = lambda a: a.improved
@@ -39,7 +41,8 @@ class Gwo(UpdateMethodBuilder):
             A = 2 * a * np.random.random() - a
             C = 2 * np.random.random()
             return center - A * abs( C * center - reference)
-        a = 2 - ctx.ctx.curr_gen * (2 / ctx.ctx.max_gen) 
+        a = self.a()
+        a = a - ctx.ctx.curr_gen * (a / ctx.ctx.max_gen) 
         ref = self.reference(ctx).avg()
         return partial(callback, reference=ref, a=a)
     

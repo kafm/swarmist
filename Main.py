@@ -10,10 +10,16 @@ from swarmist.algos.de import De
 from swarmist.algos.tlbo import Tlbo
 from swarmist.algos.gwo import Gwo
 from swarmist.algos.wo import Wo
+from swarmist.algos.fa import Fa
+from swarmist.algos.sca import Sca
 from swarmist.utils.benchmark import sphere, ackley, schwefel
 #from swarmist_bck.PSO import SearchResult, PSO
 #from swarmist_bck.TLBO import SearchResult, TLBO
-from swarmist_bck.WO import SearchResult, WO
+#from swarmist_bck.WO import SearchResult, WO
+from swarmist_bck.CS import SearchResult, CS
+from swarmist_bck.CuckooSearch import CuckooSearch
+
+#TODO Cuckoo have behaviours not supported. Its not possible to perform eval within pipeline and its not possible to update another element from within pipeline
 
 numDimensions = 20
 populationSize = 40
@@ -23,13 +29,23 @@ maxEvaluations = 50000
 minFitness = None
 func, bounds = sphere()
 
-res_original: SearchResult = WO(
+res_old_old: SearchResult = CuckooSearch(
     fitnessFunction=func,
     bounds = bounds,
     numDimensions = numDimensions,
     populationSize = populationSize,
-    #maxGenerations = numGenerations,
-    maxEvaluations = maxEvaluations
+    maxGenerations = numGenerations,
+).search()
+
+print("Old old ended", res_old_old.best.fitness)
+
+res_original: SearchResult = CS(
+    fitnessFunction=func,
+    bounds = bounds,
+    numDimensions = numDimensions,
+    populationSize = populationSize,
+    maxGenerations = numGenerations,
+    #maxEvaluations = maxEvaluations
 ) 
 
 print("Old ended", res_original.best.fitness)
@@ -42,13 +58,14 @@ res_new = search(
         fit_function=minimize(func)
     ),
     stop_condition=until(
-        max_evals=maxEvaluations,
+        #max_evals=maxEvaluations,
+        max_gen=numGenerations
     ),
     search_strategy=using(
         size(populationSize),
         init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Wo().pipeline()
+        *Sca().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)
