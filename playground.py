@@ -10,19 +10,24 @@ import numpy as np
 # print(np.average(arr, axis=0))
 # print(np.sum(arr, axis=0))
 
-@dataclass(frozen=True)
-class Test:
-    els: List[int]
+# @dataclass(frozen=True)
+# class Test:
+#     els: List[int]
 
 
-test = Test([1,2])
-print(test.els)
-test.els.append(3)
-test.els.extend([4,5])
-print(test.els)
-print(test.els[:1])
+# test = Test([1,2])
+# print(test.els)
+# test.els.append(3)
+# test.els.extend([4,5])
+# print(test.els)
+# print(test.els[:1])
 
-r = np.random.uniform(size=20)
-print(r)
-print(np.linalg.norm(r))                                               
-print(np.abs(r))
+# r = np.random.uniform(size=20)
+# print(r)
+# print(np.linalg.norm(r))                                               
+# print(np.abs(r))
+
+n = 20
+dim = 10
+pa = .25
+print(np.random.uniform(0, 1, (n, dim)) > pa)

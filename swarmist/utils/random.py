@@ -1,5 +1,6 @@
 from typing import Union, Dict, Optional, List, TypeVar, Tuple, Callable
 from dataclasses import dataclass
+import math
 import numpy as np
 import scipy.stats as ss
 from swarmist.core import Bounds
@@ -42,6 +43,15 @@ def levy(loc:float = 0.0, scale:float = 1.0, size:int = None)->OneOrMoreFloat:
     u = np.random.uniform(size=size)
     z = ss.norm.ppf(1 - u/2)
     return loc + ( scale / ( 1/z ) **2 )
+
+def levy2(loc: float = 0.0, scale: float = 1.0, size: int = None)->OneOrMoreFloat:
+    beta = loc if loc > 1 else 1
+    gamma1 = math.gamma(1+beta)
+    gamma2 = math.gamma((1+beta)/2)
+    sigma = (gamma1*math.sin(math.pi*beta/2)/(gamma2*beta*2**((beta-1)/2))) ** (1/beta)
+    u = np.random.normal(0,1, size=size) * sigma
+    v = np.random.normal(0,1, size=size) 
+    return u / abs(v) ** (1 / beta)
 
 def skewnormal(shape:OneOrMoreFloat = 0.0, loc:OneOrMoreFloat = 0.0, scale: float = 1.0, size: int = None)->OneOrMoreFloat:
     return ss.skewnorm.rvs(a=shape, loc=loc, scale=scale, size=size)

@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import Callable, Union
+from typing import Callable, Union, cast
 from dataclasses import replace
 import numpy as np
+import math
 from swarmist.core.dictionary import *
 from swarmist.core.strategy import select, all, with_probability
 from swarmist.utils import random
@@ -17,19 +18,27 @@ class Cs(UpdateMethodBuilder):
     def __init__(self, 
         centroid: ReferenceGetter = best_neighbor(),
         reference: ReferenceGetter = self_pos(),
-        recombination: RecombinationMethod = replace_all(),
-        a: float = 2
+        local_centroid: ReferenceGetter = pick_random(),
+        local_reference: ReferenceGetter = pick_random(),
+        global_recombination: RecombinationMethod = replace_all(),
+        local_recombination: RecombinationMethod = k_with_probability(.75),
+        alpha: float = 1,
+        mu: float = 1.5 #replaced lambda with mu due to reserved python lambda 
     ):
         super().__init__(
             centroid = centroid,
-            reference = reference,
-            recombination = recombination
+            reference = reference
         )
-        self.a = a if callable(a) else lambda: a
+        self.local_centroid = local_centroid
+        self.local_reference = local_reference
+        self.global_recombination = global_recombination
+        self.local_recombination = local_recombination 
+        self.alpha = alpha if callable(alpha) else lambda: alpha
+        self.mu = mu if callable(mu) else lambda: mu
        
     def pipeline(self)->UpdatePipeline:
         global_update_selection = select(all())
-        local_update_selection = select(with_probability())
+        local_update_selection = select(all()) #select(with_probability())
         return [
             lambda: Update(
                 selection=global_update_selection(),
@@ -38,28 +47,22 @@ class Cs(UpdateMethodBuilder):
             ), 
             lambda: Update(
                 selection=local_update_selection(),
-                method=self.global_update,
+                method=self.local_update,
                 where=lambda a: a.improved
             )
         ]
     
     def global_update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.ndims
-        a = self.a()
-        r1 = a - ctx.ctx.curr_gen * (a / ctx.ctx.max_gen) 
-        r2 = np.random.uniform(low=0, high=2*np.pi, size=ndims)
-        r3 = np.random.uniform(low=-2, high=2, size=ndims)
-        r4 = np.random.uniform(size=ndims)
-        pos = self.reference(ctx).sum()
-        center = self.centroid(ctx).sum()
-        for i in range(ndims): 
-            sc = np.sin(r2[i]) if r4[i] < .5 else np.cos(r2[i])
-            pos[i] += ( 
-                r1 * 
-                sc * 
-                abs(r3[i] * center[i] - pos[i]) 
-            )
-        return self.recombination(ctx.agent, pos)
+        pos = ctx.agent.pos
+        best = self.centroid(ctx).sum()
+        ref = self.reference(ctx).sum()
+        pos = pos + self.alpha() *random.levy2(loc=self.mu(), size=ndims) * np.subtract(ref, best)
+        return self.global_recombination(ctx.agent, pos)
     
     def local_update(self, ctx: UpdateContext)->Agent:
-        pass
+        ndims = ctx.ndims
+        a = self.local_centroid(ctx).sum()
+        b = self.local_reference(ctx).sum()
+        pos = ctx.agent.pos + (np.random.rand(ndims) * np.subtract(a, b))
+        return self.local_recombination(ctx.agent, pos)

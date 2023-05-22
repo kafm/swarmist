@@ -32,6 +32,17 @@ def exponential(cr_probability: float = .6)->RecombinationMethod:
         return replace(agent, pos=new_pos)
     return callback
 
+
+def k_with_probability(probability: float = .25)->RecombinationMethod:
+    def callback(agent: Agent, target: Pos)->Agent:
+        n = agent.ndims
+        new_pos = np.copy(agent.pos)
+        for i in range(n):
+            if np.random.uniform(0,1) < probability:
+                new_pos[i] = target[i]
+        return replace(agent, pos=new_pos)
+    return callback
+
 def replace_all()->RecombinationMethod:
     def callback(agent: Agent, target: Pos)->Agent:
         return replace(agent, pos=np.copy(target))

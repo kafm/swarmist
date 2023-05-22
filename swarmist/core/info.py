@@ -94,12 +94,12 @@ class UpdateInfo(UpdateContext):
         return agents
 
     def pick_random(self, k: int = 1, replace: bool = False)->AgentList:
-        agents = self.info.pick_random(replace=replace,size=k)
+        agents = self.info.pick_random(replace=replace,k=k)
         self._append_picked(agents)
         return agents
         
     def pick_roulette(self, k: int = 1, replace: bool = False)->AgentList:
-        agents = self.info.pick_random(size=k, replace=replace, p=self.info.probs)
+        agents = self.info.pick_random(k=k, replace=replace, p=self.info.probs)
         self._append_picked(agents)
         return agents
         

@@ -12,6 +12,7 @@ from swarmist.algos.gwo import Gwo
 from swarmist.algos.wo import Wo
 from swarmist.algos.fa import Fa
 from swarmist.algos.sca import Sca
+from swarmist.algos.cs import Cs
 from swarmist.utils.benchmark import sphere, ackley, schwefel
 #from swarmist_bck.PSO import SearchResult, PSO
 #from swarmist_bck.TLBO import SearchResult, TLBO
@@ -65,7 +66,7 @@ res_new = search(
         size(populationSize),
         init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Sca().pipeline()
+        *Cs().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)

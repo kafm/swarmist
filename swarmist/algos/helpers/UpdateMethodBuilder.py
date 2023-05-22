@@ -1,11 +1,11 @@
 from abc import ABC, abstractmethod
 from typing import Callable, List
-from swarmist.core.dictionary import Update, UpdateContext, Pos
+from swarmist.core.dictionary import Update, UpdateContext, Pos, Agent
 from .references import Reference
 from .recombination import RecombinationMethod
 
 ReferenceGetter = Callable[[UpdateContext], Reference]
-RecombinationMethod = Callable[[Pos, Pos], Pos]
+RecombinationMethod = Callable[[Agent, Pos], Pos]
 UpdatePipeline = List[Callable[..., Update]]
 
 class UpdateMethodBuilder(ABC):
