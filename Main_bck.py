@@ -2,7 +2,7 @@ from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
 
-from swarmist_bck import SearchResult, PSO, benchmark
+from swarmist_old import SearchResult, PSO, benchmark
 
 algo = PSO
 numDimensions = 20

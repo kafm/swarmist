@@ -1,6 +1,6 @@
 from typing import List
 from collections import namedtuple
-from swarmist.core.dictionary import Agent
+from swarmist_bck.core.dictionary import Agent
 from dataclasses import fields, dataclass
 import numpy as np
 

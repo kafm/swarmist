@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from .dictionary import Agent, AgentList, Bounds, Fit, GroupInfo, UpdateContext, SearchContext
 import numpy as np
 
-def get_fits(agents: AgentList)->List[Fit]:
+def get_fits(agents: AgentList)->List[float]:
     return [a.fit for a in agents]
 
-def fit_to_prob(fits: List[Fit])->List[float]:
+def fit_to_prob(fits: List[float])->List[int]:
     min_fit = min(fits)
     max_fit = max(fits)
     total = 0

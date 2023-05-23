@@ -1,24 +1,30 @@
 from __future__ import annotations
-from typing import Optional, List, Callable
+from typing import Optional
 from pymonad.either import Right, Left, Either
 import sys
 import numpy as np
-from swarmist.core.dictionary import SearchContext, Fit, Pos, SearchResults
-from swarmist.core.errors import SearchEnded
-from swarmist.core.evaluator import Evaluator, Evaluation
+from .dictionary import *
+from .errors import SearchEnded
+
 
 class SearchExecutor:
     def __init__(self, 
-        evaluator: Evaluator,
+        fit_func: FitnessFunctionDef,
+        ndims: int, 
+        bounds: Bounds,
+        constraints: Optional[ConstraintsChecker],
         max_gen: Optional[int],
         min_fit: Optional[float], 
         max_evals:  Optional[int],
     ):
-        self.evaluator = evaluator
+        self.ndims = ndims
+        self.bounds = bounds
+        self.fit_func:FitnessFunction = fit_func
+        self.constraints = constraints
         self.min_fit = min_fit
         self.max_evals = max_evals
         self.max_gen = sys.maxsize if not max_gen else max_gen
-        self.curr_fit: Fit = np.inf
+        self.curr_fit: Fit = sys.float_info.max
         self.curr_pos: Pos = None
         self.curr_gen:int = 0
         self.curr_eval:int = 0
@@ -28,8 +34,9 @@ class SearchExecutor:
     def context(self)->SearchContext:
         return SearchContext(
              evaluate=self.evaluate, 
-             ndims=self.evaluator.ndims, 
-             bounds=self.evaluator.bounds,
+             clip=self.clip,
+             ndims=self.ndims, 
+             bounds=self.bounds,
              curr_gen=self.curr_gen,
              max_gen=self.max_gen,
              curr_fit=self.curr_fit,
@@ -38,13 +45,18 @@ class SearchExecutor:
              max_evals=self.max_evals
         )
     
-    def evaluate(self, pos: Pos)->Evaluation:
+    def clip(self, pos: Pos)->Pos:
+        cs = self.constraints
+        new_pos = np.clip(pos, self.bounds.min, self.bounds.max)
+        return new_pos if not cs else cs(new_pos)
+
+    def evaluate(self, pos :Pos)->Fit:
         self._assert_max_evals()
         self._assert_min_fit()
-        evaluation = self.evaluator.evaluate(pos)
+        fit = self.fit_func(pos)
         self.curr_eval += 1
-        self._log_result(evaluation)
-        return evaluation 
+        self._log_result(pos, fit)
+        return fit 
     
     def run(self, callback: Callable)->Either[SearchResults, Exception]:
         while self._next():
@@ -57,11 +69,11 @@ class SearchExecutor:
                 break
         return Right(self._results)
         
-    def _log_result(self, evaluation: Evaluation):
-        if evaluation.fit <= self.curr_fit:
-            self.curr_fit = evaluation.fit
-            self.curr_pos = evaluation.pos
-            self._results[self.curr_gen] = evaluation
+    def _log_result(self, pos: Pos, fit: float):
+        if fit <= self.curr_fit:
+            self.curr_fit = fit
+            self.curr_pos = pos
+            self._results[self.curr_gen] = Evaluation(pos,fit)
 
     def _next(self)->bool:
         if not self._ended and self.curr_gen < self.max_gen:

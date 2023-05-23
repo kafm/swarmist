@@ -1,24 +1,24 @@
 from __future__ import annotations
 import matplotlib.pyplot as plt
 import numpy as np
-from swarmist.core import *
-from swarmist.algos.helpers import *
-from swarmist.algos.pso import Pso, Fips, Barebones
-from swarmist.algos.jaya import Jaya
-from swarmist.algos.abc import Abc
-from swarmist.algos.de import De
-from swarmist.algos.tlbo import Tlbo
-from swarmist.algos.gwo import Gwo
-from swarmist.algos.wo import Wo
-from swarmist.algos.fa import Fa
-from swarmist.algos.sca import Sca
-from swarmist.algos.cs import Cs
-from swarmist.utils.benchmark import sphere, ackley, schwefel
+from swarmist_bck.core import *
+from swarmist_bck.algos.helpers import *
+from swarmist_bck.algos.pso import Pso, Fips, Barebones
+from swarmist_bck.algos.jaya import Jaya
+from swarmist_bck.algos.abc import Abc
+from swarmist_bck.algos.de import De
+from swarmist_bck.algos.tlbo import Tlbo
+from swarmist_bck.algos.gwo import Gwo
+from swarmist_bck.algos.wo import Wo
+from swarmist_bck.algos.fa import Fa
+from swarmist_bck.algos.sca import Sca
+from swarmist_bck.algos.cs import Cs
+from swarmist_bck.utils.benchmark import sphere, ackley, schwefel
 #from swarmist_bck.PSO import SearchResult, PSO
 #from swarmist_bck.TLBO import SearchResult, TLBO
 #from swarmist_bck.WO import SearchResult, WO
-from swarmist_bck.CS import SearchResult, CS
-from swarmist_bck.CuckooSearch import CuckooSearch
+from swarmist_old.CS import SearchResult, CS
+from swarmist_old.CuckooSearch import CuckooSearch
 
 #TODO Cuckoo have behaviours not supported. Its not possible to perform eval within pipeline and its not possible to update another element from within pipeline
 
