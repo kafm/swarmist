@@ -1,18 +1,27 @@
-import swarmist_bck as sw
+import swarmist as sw
 
 st = sw.strategy()
-st.param("c1", default=0, min=0, max=2.0)
-st.param("c2", default=0, min=0, max=2.0)
-st.init(sw.initialization.random)
-st.topology(sw.topology.g_best)
+st.param("c1", value=0, min=0, max=2.0)
+st.param("c2", value=0, min=0, max=2.0)
+st.init(sw.init.random)
+st.topology(sw.topology.gbest)
 st.pipeline(
     sw.select(sw.all()).update(
-        velocity=lambda ctx: ctx.velocity + ctx.param("c1") * ctx.r1 * (ctx.pbest - ctx.position) + ctx.param("c2") * ctx.r2 * (ctx.gbest - ctx.position),
-        pos=lambda ctx: ctx.position + ctx.velocity,
-        recombination=sw.replace_all(),   
-        where=lambda ctx: ctx.fitness < ctx.pbest_fitness
-    ),
-    sw.select(sw.all()).update(sw.pso(sw.particle().velocity(sw.velocity().clerc(c1="c1", c2="c2")))),
+        gbest=sw.swarm.best(),
+        pbest=sw.agent.best(),
+        velocity=lambda ctx: (
+            ctx.agent.delta +
+            ctx.param("c1") * ctx.random.rand() * (ctx.get("gbest").diff(ctx.agent.best)) +
+            ctx.param("c2") * ctx.param("r2") * (ctx.get("gbest").diff(ctx.agent.best))
+        ),
+        pos=lambda ctx: ctx.agent.pos + ctx("velocity")
+    ).recombinant(
+        sw.recombination.replace_all()
+    ).where(lambda ctx: ctx.improved),
+    sw.select(sw.all()).update(
+        pos=sw.init.random(),
+        recombination=sw.recombination.get_new()
+    )
 )
 
 sw.search(

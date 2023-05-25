@@ -1,8 +1,9 @@
 from typing import List
 from collections import namedtuple
-from swarmist_bck.core.dictionary import Agent
+#from swarmist_bck.core.dictionary import Agent
 from dataclasses import fields, dataclass
-import numpy as np
+from functools import reduce
+#import numpy as np
 
 #agent_fields = {field.name: field.type for field in fields(Agent)}
 #print(agent_fields)
@@ -27,7 +28,26 @@ import numpy as np
 # print(np.linalg.norm(r))                                               
 # print(np.abs(r))
 
-n = 20
-dim = 10
-pa = .25
-print(np.random.uniform(0, 1, (n, dim)) > pa)
+# n = 20
+# dim = 10
+# pa = .25
+# print(np.random.uniform(0, 1, (n, dim)) > pa)
+
+
+
+#build a python compose function where output of one function is input of the next using reduce 
+# from functools import reduce
+# def compose(*funcs):
+#     return reduce(lambda f, g: lambda x: f(g(x)), funcs, lambda x: x)
+#
+
+# vals =[1,2,3,4,5]
+
+# print(reduce(function=lambda x, y: x + y, sequence=vals, initial=0))
+
+def test(**kargs):
+    print(kargs.pop("b"))
+    for key, value in kargs.items():
+        print(key, value)
+
+test(a=1, b=2, c=3)

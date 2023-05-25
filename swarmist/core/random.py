@@ -34,7 +34,7 @@ class Random:
         return np.random.lognormal(loc=loc, scale=scale, size=self.size)
 
     #k=shape
-    def weibull(self, shape:float = 1.0, scale:float = 1.0, size: int = None)->List[float]:
+    def weibull(self, shape:float = 1.0, scale:float = 1.0)->List[float]:
         return np.random.weibull(shape, scale=scale, size=self.size)
 
     #loc=location
@@ -42,7 +42,7 @@ class Random:
         u = np.random.uniform(size=self.size)
         return loc + ( scale * np.tan(np.pi * (u-.5) ) )
     
-    def skewnormal(self, shape:OneOrMoreFloat = 0.0, loc:OneOrMoreFloat = 0.0, scale: float = 1.0, size: int = None)->List[float]:
+    def skewnormal(self, shape:OneOrMoreFloat = 0.0, loc:OneOrMoreFloat = 0.0, scale: float = 1.0)->List[float]:
         return ss.skewnorm.rvs(a=shape, loc=loc, scale=scale, size=self.size)    
 
 
