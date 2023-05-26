@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import List, Optional, Callable, Dict, Union
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import replace
 from pymonad.either import Either
 import numpy as np
 from swarmist.core.dictionary import Selection, UpdateContext, PosEditor, Recombination, Condition, IReference, IReferences, Pos, GroupInfo, Update, Order
@@ -90,7 +90,7 @@ class UpdateBuilder:
             self.recombinator: Recombination = RecombinationMethods().replace_all()
             self.helpers: OrderedDict[str, int] = OrderedDict()
             self.pos_editor: PosEditor = None
-            self.where: Optional[Condition] = None
+            self.condition: Optional[Condition] = None
 
       def update(self, **kwargs: PosHelper)->UpdateBuilder:
             self.pos_editor = kwargs.pop("pos")
@@ -107,11 +107,13 @@ class UpdateBuilder:
       
       def get(self)->Update:
             def update(ctx: UpdateContext):
+                  vars: Dict[str, Union[Pos, IReference, IReferences]] = {}
                   for key, value in self.helpers.items():
-                        ctx.set(key, value(ctx))
-                  return self.pos_editor(ctx)
+                        vars[key] = value(replace(ctx, vars=vars))
+                  return self.pos_editor(replace(ctx, vars=vars))
             return Update(
-                  method=update,
                   selection=self.selection(),
-                  where=self.where
+                  editor=update,
+                  recombination=self.recombinator,
+                  condition=self.condition
             )

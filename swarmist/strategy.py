@@ -1,31 +1,51 @@
 from __future__ import annotations
 from typing import Dict, List, Callable, Any, Optional
 from dataclasses import dataclass
-from swarmist.core.dictionary import PosGenerationMethod, TopologyBuilder, ParameterValue, Parameters
+from pymonad.either import Either, Right, Left
+from swarmist.core.dictionary import PosGenerationMethod, TopologyBuilder, ParameterValue, Parameters, SearchStrategy, Update, Initialization
+from swarmist.initialization import InitializationMethods, TopologyMethods
+from swarmist.update import UpdateBuilder
 
 class Strategy:
     def __init__(self):
         self._parameters = Parameters()
-        self._defaults = Defaults()
+        self._initialization = InitializationMethods().random()
+        self._topology = TopologyMethods().gbest()
+        self._population_size = 20
+        self._pipeline_builders: List[UpdateBuilder] = []
 
-    def param(self, name: str, min: float, max: float, value: Optional[ParameterValue]=None):
+    def param(self, name: str, min: float, max: float, value: Optional[ParameterValue]=None)->Strategy:
         self._parameters.add(name, min, max, value)
+        return self
 
-    def init(self, initialization: PosGenerationMethod):
-        self._defaults.initialization = initialization
+    def init(self, initialization: PosGenerationMethod, size: int)->Strategy:
+        self._initialization = initialization
+        self._population_size = size
+        return self
 
-    def topology(self, topology: TopologyBuilder):
-        self._defaults.topology = topology
+    def topology(self, topology: TopologyBuilder)->Strategy:
+        self._topology = topology
+        return self
 
-    def pipeline(self, *updates: Step): #TODO
-        pass
+    def pipeline(self, *updates: UpdateBuilder)->Strategy:
+        self._pipeline_builders = list(updates)
+        return self
 
-    def __call__(self, **kwargs):
-        pass
-
-
-@dataclass
-class Defaults:
-    initialization: PosGenerationMethod = None
-    topology: TopologyBuilder = None
+    def get(self)->Either[Exception, SearchStrategy]:
+        try:
+            return Right(
+                SearchStrategy(
+                    initialization=Initialization(
+                        population_size=self._population_size,
+                        generate_pos=self._initialization,
+                        topology=self._topology
+                    ),
+                    parameters=self._parameters,
+                    update_pipeline=[
+                        builder.get() for builder in self._pipeline_builders if builder
+                    ]
+                )
+            )
+        except Exception as e:
+            return Left(e)
     

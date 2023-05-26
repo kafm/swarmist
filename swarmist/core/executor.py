@@ -6,6 +6,7 @@ import numpy as np
 from swarmist.core.dictionary import SearchContext, Fit, Pos, SearchResults
 from swarmist.core.errors import SearchEnded
 from swarmist.core.evaluator import Evaluator, Evaluation
+from swarmist.core.population import Population
 
 class SearchExecutor:
     def __init__(self, 
@@ -46,15 +47,14 @@ class SearchExecutor:
         self._log_result(evaluation)
         return evaluation 
     
-    def run(self, callback: Callable)->Either[SearchResults, Exception]:
-        while self._next():
+    def evolve(self, population: Population)->Either[Exception, SearchResults]:
+        if self._next():
             try: 
-                callback(self.context())
+                return self.evolve(population.update(self.context()))
             except Exception as e: 
                 if not isinstance(e, SearchEnded):
                     return Left(e)
                 self._log_result(self.curr_pos, self.curr_fit)
-                break
         return Right(self._results)
         
     def _log_result(self, evaluation: Evaluation):

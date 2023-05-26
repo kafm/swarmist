@@ -9,7 +9,7 @@ class SearchEnded(Exception):
     "Raised when the search ended gracefully"
     pass     
 
-def try_catch(f: Callable[[], T])->Either[T,Exception]:
+def try_catch(f: Callable[[], T])->Either[Exception, T]:
     try: 
         return Right(f())
     except Exception as e:

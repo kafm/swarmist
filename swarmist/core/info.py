@@ -168,7 +168,7 @@ class UpdateInfo(UpdateContext):
     def of(cls, agent: AgentList, info: GroupInfo, ctx: SearchContext)->UpdateInfo:
         return cls(
             agent=agent, swarm=SwarmContext.of(info,[agent.index]), 
-            search_context=ctx, params=ctx.params, search_context=ctx,
+            search_context=ctx, params=ctx.params, 
             random=Random(ctx.ndims)
         )   
         

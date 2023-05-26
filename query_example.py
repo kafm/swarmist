@@ -3,8 +3,8 @@ import swarmist as sw
 st = sw.strategy()
 st.param("c1", value=0, min=0, max=2.0)
 st.param("c2", value=0, min=0, max=2.0)
-st.init(sw.init.random)
-st.topology(sw.topology.gbest)
+st.init(sw.init.random(), size=20)
+st.topology(sw.topology.gbest())
 st.pipeline(
     sw.select(sw.all()).update(
         gbest=sw.swarm.best(),
@@ -24,13 +24,15 @@ st.pipeline(
     )
 )
 
-sw.search(
-    sw.space(
-        dimensions=sw.dimensions(30),
-        bounds=sw.bounded(10, 20),
-        constraints=sw.constrained_by(lambda pos: pos ),
-        fit_function=sw.minimize(lambda x: sum(x**2))
-    ),
+res = sw.search(
+    sw.minimize(
+        lambda x: sum(x**2),
+        lbound=-10,
+        ubound=10,
+        dimensions=30
+    ).constrained_by(lambda pos: pos),
     sw.until(max_evals=50000),
-    sw.using(st())
+    sw.using(st)
 )
+
+print(res)

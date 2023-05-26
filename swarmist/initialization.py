@@ -80,10 +80,10 @@ class InitializationMethods:
         return callback
     
 class TopologyMethods:
-    def gbest()->TopologyBuilder:
+    def gbest(self)->TopologyBuilder:
         return lambda _: None
 
-    def lbest(k:int = 2)->TopologyBuilder:
+    def lbest(self,k:int = 2)->TopologyBuilder:
         def callback(agents: AgentList)->StaticTopology:
             n = len(agents)
             topology = []

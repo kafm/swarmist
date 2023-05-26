@@ -3,54 +3,53 @@ from __future__ import annotations
 from typing import List
 from dataclasses import replace
 import numpy as np
-from swarmist.core.dictionary import Agent, AgentList, Topology, TopologyBuilder, Selection, PosGenerator, SearchContext, Condition, Recombination, PosEditor, PopulationInfo, GroupInfo
+from swarmist.core.dictionary import Agent, AgentList, Topology, TopologyBuilder, Update, PosGenerator, SearchStrategy, SearchContext, Condition, Recombination, PosEditor, PopulationInfo, GroupInfo, Initialization
 from swarmist.core.errors import assert_equal_length
 from swarmist.core.info import AgentsInfo, UpdateInfo
 
 class Population:
     def __init__(self, 
-        size: int, 
-        pos_generator: PosGenerator, 
-        topology_builder: TopologyBuilder, 
+        strategy: SearchStrategy, 
         ctx: SearchContext):
         self.ctx = ctx
-        self.size = size
+        self.strategy = strategy
+        self.size = strategy.initialization.population_size
         self.agents = [
             self._create_agent(
                 ctx=ctx,
-                pos_generator=pos_generator,
+                pos_generator=strategy.initialization.generate_pos,
                 index=i
-            ) for i in range(size)
+            ) for i in range(self.size)
         ]
-        self.topology = self._get_topology(self.agents, topology_builder)
-
-    def update(
-        self,
-        selection: Selection,
-        pos_editor: PosEditor,
-        where: Condition,
-        recombinator: Recombination
-    )->Population:
-        rank = self._get_rank()
-        to_update:AgentList = selection(rank.info)
-        new_agents:AgentList = self.agents.copy()
+        self.topology = self._get_topology(self.agents, strategy.initialization.topology)
+        self.pipeline = strategy.update_pipeline
+    
+    def update(self, ctx: SearchContext, _population: Population = None, index=0)->Population:
+        population = _population if _population else self
+        if index == len(self.pipeline):
+            return population
+        update = self.pipeline[index]
+        rank = self._get_rank(population)
+        to_update:AgentList = update.selection(rank.info)
+        new_agents:AgentList = population.agents.copy()
         for agent in to_update:
             new_agents[agent.index] = self._update_agent(
                 agent=agent,
-                info=UpdateInfo.of(agent, rank.group_info[agent.index]),
-                pos_editor=pos_editor,
-                recombinator=recombinator,
-                where=where
+                info=UpdateInfo.of(agent, rank.group_info[agent.index], ctx),
+                pos_editor=update.editor,
+                recombinator=update.recombination,
+                condition=update.condition
             )
-        return replace(self, agents=new_agents)
+        return self.update(replace(self, agents=new_agents), index+1)
     
-    def _get_rank(self)->PopulationInfo:
-        topology = self.topology(self.agents) if self.topology else None 
-        population_rank = AgentsInfo.of(self.agents, self.ctx.bounds, self.ctx.ndims)
+    def _get_rank(self, population: Population)->PopulationInfo:
+        topology = self.topology(population.agents) if self.topology else None 
+        agents = population.agents
+        population_rank = AgentsInfo.of(agents, self.ctx.bounds, self.ctx.ndims)
         groups: List[GroupInfo] = (
-            [population_rank for _ in self.agents] if not topology
+            [population_rank for _ in agents] if not topology
             else [
-                AgentsInfo.of([self.agents[i] for i in group], self.ctx.bounds, self.ctx.ndims)
+                AgentsInfo.of([agents[i] for i in group], self.ctx.bounds, self.ctx.ndims)
                 for group in topology
             ]
         )
@@ -64,14 +63,14 @@ class Population:
         info: UpdateInfo,
         pos_editor: PosEditor, 
         recombinator: Recombination,
-        where: Condition
+        condition: Condition
     )->Agent:
         new_agent = self._evaluate_and_get(
                 recombinator(agent, pos_editor(info),
                 agent             
             )
         )
-        if not where or where(new_agent):
+        if not condition or condition(new_agent):
             return new_agent
         return agent
 
@@ -97,8 +96,7 @@ class Population:
 
 
     def _create_agent(pos_generator: PosGenerator, index: int, ctx: SearchContext)->Agent:
-        pos = ctx.clip(pos_generator(ctx))
-        fit = ctx.evaluate(pos)  
+        pos, fit = ctx.evaluate(pos)  
         return Agent(
             index=index,
             ndims=ctx.ndims,

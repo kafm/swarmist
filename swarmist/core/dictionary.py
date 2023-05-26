@@ -4,11 +4,11 @@ from dataclasses import dataclass
 import numpy as np
 from swarmist.core.random import Random
 
-# K = TypeVar("K")
+K = TypeVar("K")
 V = TypeVar("V")
 T = TypeVar("T")
 L = TypeVar("L")
-# KeyValue = Dict[K, V]
+KeyValue = Dict[K, V]
 
 
 
@@ -36,16 +36,16 @@ class Evaluation:
     pos: Pos = None
     fit: Fit = np.inf
 
-# @dataclass(frozen=True)
-# class StopCondition:
-#     fit: Fit
-#     max_evals: int
-#     max_gen: int
+@dataclass(frozen=True)
+class StopCondition:
+    fit: Fit
+    max_evals: int
+    max_gen: int
 
 @dataclass(frozen=True)
 class SearchContext:
     evaluate: Callable[[Pos], Evaluation]
-    params: Parameters
+    #params: Parameters
     ndims: int
     bounds: Bounds
     curr_gen: int
@@ -69,7 +69,7 @@ class Agent:
 AgentList = List[Agent]
 
 @dataclass(frozen=True)
-class AbstractInfo(Generic(L, T)): 
+class AbstractInfo(Generic[L, T]): 
     bounds: Bounds
     ndims: int
     
@@ -196,11 +196,11 @@ DynamicTopology =  Callable[[AgentList], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
 
-# @dataclass(frozen=True)
-# class Initialization:
-#     population_size: int
-#     generate_pos: PosGenerationMethod
-#     topology: TopologyBuilder
+@dataclass(frozen=True)
+class Initialization:
+    population_size: int
+    generate_pos: PosGenerationMethod
+    topology: TopologyBuilder
 
 PosGenerationMethod = Callable[[SearchContext], Pos]
 ParameterValue = Callable[[SearchContext], float]
@@ -237,16 +237,13 @@ class UpdateContext:
     swarm: ISwarmContext
     search_context: SearchContext
     random: Random
-    vars: Dict[str, Union[Pos, IReference, IReferences]] = {}
+    vars: Dict[str, Union[Pos, IReference, IReferences]]
 
     def param(self, name: str)->float:
         return self.search_context.params[name](self)
 
     def get(self, name: str)->Union[Pos, IReference, IReferences]:
         return self.vars[name]
-    
-    def set(self, name: str, value: Union[Pos, IReference, IReferences]):
-        self.vars[name] = value
 
 
 Selection = Callable[[GroupInfo], AgentList]
@@ -259,7 +256,6 @@ Recombination = Callable[[Agent, Pos], Agent]
 class Update:
     selection: Selection
     condition: Condition
-    order: Order
     recombination: Recombination
     editor: PosEditor
 
@@ -278,10 +274,11 @@ class Update:
 #     bounds: Bounds
 #     constraints: ConstraintsChecker
    
-# @dataclass(frozen=True)
-# class SearchStrategy:
-#     initialization: Initialization
-#     update_pipeline: List[Update]
+@dataclass(frozen=True)
+class SearchStrategy:
+    initialization: Initialization
+    parameters: Parameters
+    update_pipeline: List[Update]
    
 # @dataclass(frozen=True)
 # class SearchRequest:
