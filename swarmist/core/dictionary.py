@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Any, Callable, Dict, Optional, List, TypeVar, Union, Generic
-from dataclasses import dataclass
+from dataclasses import dataclass, astuple
 import numpy as np
 from swarmist.core.random import Random
 
@@ -9,32 +9,28 @@ V = TypeVar("V")
 T = TypeVar("T")
 L = TypeVar("L")
 KeyValue = Dict[K, V]
-
-
-
 Pos = List[float]
 Fit = float
 Number = float | int
-# MaxFit = sys.float_info.max
-
-FitnessFunction = Callable[[Pos],float]
+FitnessFunction = Callable[[Pos], float]
 ConstraintChecker = Callable[[Pos], Pos]
 ConstraintsChecker = List[ConstraintChecker]
 
-# @dataclass(frozen=True)
-# class FitnessFunctionDef:
-#     func: FitnessFunction
-#     minimize: bool
 
 @dataclass(frozen=True)
 class Bounds:
     min: float
     max: float
 
+
 @dataclass(frozen=True)
 class Evaluation:
     pos: Pos = None
     fit: Fit = np.inf
+
+    def __iter__(self):
+        return iter(astuple(self))
+
 
 @dataclass(frozen=True)
 class StopCondition:
@@ -42,10 +38,11 @@ class StopCondition:
     max_evals: int
     max_gen: int
 
+
 @dataclass(frozen=True)
 class SearchContext:
     evaluate: Callable[[Pos], Evaluation]
-    #params: Parameters
+    parameters: Parameters
     ndims: int
     bounds: Bounds
     curr_gen: int
@@ -55,8 +52,9 @@ class SearchContext:
     curr_eval: int
     max_evals: int
 
+
 @dataclass(frozen=True)
-class Agent: 
+class Agent:
     index: int
     ndims: int
     delta: Pos
@@ -66,135 +64,197 @@ class Agent:
     trials: int
     improved: bool
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
 AgentList = List[Agent]
 
+
 @dataclass(frozen=True)
-class AbstractInfo(Generic[L, T]): 
+class AbstractInfo(Generic[L, T]):
+    def all(self) -> L:
+        raise NotImplementedError
+
+    def size(self) -> int:
+        raise NotImplementedError
+
+    def best(self) -> T:
+        raise NotImplementedError()
+
+    def worse(self) -> T:
+        raise NotImplementedError()
+
+    def k_best(self, size: int) -> L:
+        raise NotImplementedError()
+
+    def k_worse(self, size: int) -> L:
+        raise NotImplementedError()
+
+    def filter(self, f: Callable[[T], bool]) -> L:
+        raise NotImplementedError()
+
+    def pick_random(
+        self, k: Optional[int] = None, replace: bool = False
+    ) -> Union[L, T]:
+        raise NotImplementedError()
+
+    def pick_roulette(
+        self, k: Optional[int] = None, replace: bool = False
+    ) -> Union[L, T]:
+        raise NotImplementedError()
+
+    def min(self, key: Union[str, Callable[[T], Any]] = "best") -> T:
+        raise NotImplementedError()
+
+    def max(self, key: Union[str, Callable[[T], Any]] = "best") -> T:
+        raise NotImplementedError()
+
+
+@dataclass(frozen=True)
+class GroupInfo(AbstractInfo[AgentList, Agent]):
     bounds: Bounds
     ndims: int
-    
-    def all()->L:
-        raise NotImplementedError
-    
-    def size()->int:
-        raise NotImplementedError
-    
-    def best()->T:
-        raise NotImplementedError()
-    
-    def worse()->T:
-        raise NotImplementedError()
-    
-    def k_best(size: int)->L:
-        raise NotImplementedError()
 
-    def k_worse(size: int)->L:
-        raise NotImplementedError()
-    
-    def filter(f: Callable[[T], bool])->L: 
-        raise NotImplementedError()
-
-    def pick_random(k: Optional[int] = None, replace: bool = False)->Union[L,T]:
-        raise NotImplementedError()
-        
-    def pick_roulette(k: Optional[int] = None, replace: bool = False)->Union[L,T]:
-        raise NotImplementedError()
-    
-    def min(key: Union[str, Callable[[T], Any]] = "best")->T:
-        raise NotImplementedError()
-
-    def max(key: Union[str, Callable[[T], Any]] = "best")->T:
-        raise NotImplementedError()
 
 @dataclass(frozen=True)
-class GroupInfo(AbstractInfo[AgentList, Agent]): 
-    bounds: Bounds
-    ndims: int
-        
-@dataclass(frozen=True)
-class IReference: 
+class IReference:
     agent: Agent
-    
-    def is_better(other: IReference)->bool:
-        raise NotImplementedError()
-    
-    def get(key: Union[str, Callable[[IReference], Pos]] = "best")->Pos:
+
+    def is_better(self, other: IReference) -> bool:
         raise NotImplementedError()
 
-    def add(other: Union[IReference, Pos, int, float], key:Union[str, Callable[[IReference], Pos]] = "best")->Pos: 
-        raise NotImplementedError()
-    
-    def subract(other: Union[IReference, Pos, int, float], key:Union[str, Callable[[IReference], Pos]] = "best")->Pos: 
-        raise NotImplementedError()    
-    
-    def multiply(other: Union[IReference, Pos, int, float], key:Union[str, Callable[[IReference], Pos]] = "best")->Pos: 
+    def get(self, key: Union[str, Callable[[Agent], Pos]] = "best") -> Pos:
         raise NotImplementedError()
 
-    def divide(other: Union[IReference, Pos, int, float], key:Union[str, Callable[[IReference], Pos]] = "best")->Pos: 
+    def add(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
         raise NotImplementedError()
 
-    def power(other: Union[IReference, Pos, int, float], key:Union[str, Callable[[IReference], Pos]] = "best")->Pos: 
+    def subtract(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
         raise NotImplementedError()
-    
-    def modulus(other: Union[IReference, Pos, int, float], key:Union[str, Callable[[IReference], Pos]] = "best")->Pos: 
+
+    def multiply(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
         raise NotImplementedError()
+
+    def divide(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def power(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def modulus(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def __add__(self, other: Union[IReference, Pos, int, float]) -> Pos:
+        return self.add(other)
+
+    def __sub__(self, other: Union[IReference, Pos, int, float]) -> Pos:
+        return self.subtract(other)
+
+    def __mul__(self, other: Union[IReference, Pos, int, float]) -> Pos:
+        return self.multiply(other)
+
+    def __div__(self, other: Union[IReference, Pos, int, float]) -> Pos:
+        raise self.divide(other)
+
+    def __pow__(self, other: Union[IReference, Pos, int, float]) -> Pos:
+        return self.power(other)
+
+    def __mod__(self, other: Union[IReference, Pos, int, float]) -> Pos:
+        return self.modulus(other)
 
 
 @dataclass(frozen=True)
-class IReferences: 
-
-    def get(index: int)->IReference:
-        raise NotImplementedError()
-    
-    def indices()->List[int]:
-        raise NotImplementedError()
-    
-    def pop()->IReference:
-        raise NotImplementedError()
-        
-    def reduce(accumulator: Callable[[IReference], Pos], initial: Pos = None)->Pos:
-        raise NotImplementedError()
-    
-    def sum(key: Union[str, Callable[[IReference], Pos]] = "best")->Pos:
+class IReferences:
+    def get(self, index: int) -> IReference:
         raise NotImplementedError()
 
-    def avg(weights: List[float] = None, key: Union[str, Callable[[IReference], Pos]] = "best")->Pos:
-        raise NotImplementedError()
-    
-    def min(key: Union[str, Callable[[IReference], Union[Pos, Fit]]] = "best")->Pos:
+    def indices(self) -> List[int]:
         raise NotImplementedError()
 
-    def max(key: Union[str, Callable[[IReference], Union[Pos, Fit]]] = "best")->Pos:
+    def pop(self) -> IReference:
         raise NotImplementedError()
-    
-    def diff(other: Union[IReference, Pos, int, float],  key: Union[str, Callable[[IReference], Pos]] = "best", reversed: bool = False)->Pos:
-       raise NotImplementedError()
-    
-    def reverse_diff(other: Union[IReference, Pos, int, float],  key: Union[str, Callable[[IReference], Pos]] = "best")->Pos:
-       raise NotImplementedError()
 
-    def size()->int:
+    def reduce(
+        self, accumulator: Callable[[IReference], Pos], initial: Pos = None
+    ) -> Pos:
         raise NotImplementedError()
-    
+
+    def sum(self, key: Union[str, Callable[[IReference], Pos]] = "best") -> Pos:
+        raise NotImplementedError()
+
+    def avg(
+        self,
+        weights: List[float] = None,
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def min(
+        self, key: Union[str, Callable[[IReference], Union[Pos, Fit]]] = "best"
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def max(
+        self, key: Union[str, Callable[[IReference], Union[Pos, Fit]]] = "best"
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def diff(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+        reversed: bool = False,
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def reverse_diff(
+        self,
+        other: Union[IReference, Pos, int, float],
+        key: Union[str, Callable[[IReference], Pos]] = "best",
+    ) -> Pos:
+        raise NotImplementedError()
+
+    def size(self) -> int:
+        raise NotImplementedError()
+
 
 @dataclass(frozen=True)
 class PopulationInfo:
     info: GroupInfo
     group_info: List[GroupInfo]
 
-# @dataclass(frozen=True)
-# class Population:
-#     agents: AgentList
-#     topology: Topology #TODO check topology
-#     size: int
-#     ndims: int
-#     bounds: Bounds
 
 PosGenerator = Callable[[SearchContext], Pos]
 StaticTopology = List[List[int]]
-DynamicTopology =  Callable[[AgentList], StaticTopology]
+DynamicTopology = Callable[[AgentList], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
+
 
 @dataclass(frozen=True)
 class Initialization:
@@ -202,8 +262,10 @@ class Initialization:
     generate_pos: PosGenerationMethod
     topology: TopologyBuilder
 
+
 PosGenerationMethod = Callable[[SearchContext], Pos]
 ParameterValue = Callable[[SearchContext], float]
+
 
 @dataclass(frozen=True)
 class Parameter:
@@ -212,24 +274,41 @@ class Parameter:
     max: float
     value: ParameterValue
 
-class Parameters: 
-    def __init__(self):
-        self._parameters:Dict[str, Parameter] = {}
 
-    def add(self, name: str, min: float, max: float, value: Union[float, int, ParameterValue]):
+class Parameters:
+    def __init__(self):
+        self._parameters: Dict[str, Parameter] = {}
+
+    def add(
+        self,
+        name: str,
+        min: float,
+        max: float,
+        value: Union[float, int, ParameterValue],
+    ):
         self._parameters[name] = Parameter(
-            name, min, max, 
-            value if callable(value) else lambda _: value
+            name, min, max, value if callable(value) else lambda _: value
         )
+
+    def get(self, name: str, ctx: SearchContext) -> float:
+        param = self._parameters[name]
+        return np.clip(param.value(ctx), param.min, param.max)
+
 
 @dataclass(frozen=True)
 class ISwarmContext(AbstractInfo[IReferences, IReference]):
     picked: List[int]
-    def pick_random_unique(k: Optional[int] = None, replace: bool = False)->Union[IReference,IReferences]:
+
+    def pick_random_unique(
+        self, k: Optional[int] = None, replace: bool = False
+    ) -> Union[IReference, IReferences]:
         raise NotImplementedError()
-        
-    def pick_roulette_unique(k: Optional[int] = None, replace: bool = False)->Union[IReference,IReferences]:
+
+    def pick_roulette_unique(
+        self, k: Optional[int] = None, replace: bool = False
+    ) -> Union[IReference, IReferences]:
         raise NotImplementedError()
+
 
 @dataclass(frozen=True)
 class UpdateContext:
@@ -239,10 +318,10 @@ class UpdateContext:
     random: Random
     vars: Dict[str, Union[Pos, IReference, IReferences]]
 
-    def param(self, name: str)->float:
-        return self.search_context.params[name](self)
+    def param(self, name: str) -> float:
+        return self.search_context.parameters.get(name, self)
 
-    def get(self, name: str)->Union[Pos, IReference, IReferences]:
+    def get(self, name: str) -> Union[Pos, IReference, IReferences]:
         return self.vars[name]
 
 
@@ -252,6 +331,7 @@ Order = Callable[[Agent], Any]
 PosEditor = Callable[[UpdateContext], Pos]
 Recombination = Callable[[Agent, Pos], Agent]
 
+
 @dataclass(frozen=True)
 class Update:
     selection: Selection
@@ -259,37 +339,12 @@ class Update:
     recombination: Recombination
     editor: PosEditor
 
-# SelectionMethod = Callable[[GroupInfo], AgentList]
-# UpdateCondition = Callable[[UpdateContext], bool]
-# UpdateMethod = Callable[[UpdateContext], Agent]
-# RecombinationMethod = Callable[[Pos, Pos], Pos]
-# Condition = Callable[[Agent], bool]
-# OrderingMethod = Callable[[Agent], float]
 
-
-# @dataclass(frozen=True)
-# class SearchSpace:
-#     fit_func_def: FitnessFunctionDef
-#     ndims: int
-#     bounds: Bounds
-#     constraints: ConstraintsChecker
-   
 @dataclass(frozen=True)
 class SearchStrategy:
     initialization: Initialization
     parameters: Parameters
     update_pipeline: List[Update]
-   
-# @dataclass(frozen=True)
-# class SearchRequest:
-#     strategy: Optional[SearchStrategy]
-#     space: Optional[SearchSpace]
-#     until: Optional[StopCondition]
+
 
 SearchResults = List[Evaluation]
-
-# @dataclass(frozen=True)
-# class SearchFailed:
-#     error: Exception
-
-

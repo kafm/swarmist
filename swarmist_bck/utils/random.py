@@ -51,14 +51,14 @@ class Random:
         z = ss.norm.ppf(1 - u/2)
         return loc + ( scale / ( 1/z ) **2 )
 
-# def levy2(loc: float = 0.0, scale: float = 1.0, size: int = None)->List[float]:
-#     beta = loc if loc > 1 else 1
-#     gamma1 = math.gamma(1+beta)
-#     gamma2 = math.gamma((1+beta)/2)
-#     sigma = (gamma1*math.sin(math.pi*beta/2)/(gamma2*beta*2**((beta-1)/2))) ** (1/beta)
-#     u = np.random.normal(0,1, size=self.size) * sigma
-#     v = np.random.normal(0,1, size=self.size) 
-#     return u / abs(v) ** (1 / beta)
+    def levy2(self, loc: float = 0.0, scale: float = 1.0, size: int = None)->List[float]:
+        beta = loc if loc > 1 else 1
+        gamma1 = math.gamma(1+beta)
+        gamma2 = math.gamma((1+beta)/2)
+        sigma = (gamma1*math.sin(math.pi*beta/2)/(gamma2*beta*2**((beta-1)/2))) ** (1/beta)
+        u = np.random.normal(0,1, size=self.size) * sigma
+        v = np.random.normal(0,1, size=self.size) 
+        return u / abs(v) ** (1 / beta)
 
     
 #TODO migrate to initializers

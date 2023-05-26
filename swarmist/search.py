@@ -13,10 +13,10 @@ from swarmist.core.errors import try_catch, assert_at_least_one_nonnull
 from swarmist.strategy import Strategy
 from swarmist.space import SpaceBuilder
 
-def init_population(initialization: Initialization, ctx: SearchContext)->Either[Exception, Population]:
+def init_population(strategy: SearchStrategy, ctx: SearchContext)->Either[Exception, Population]:
     return try_catch(
         lambda: Population(
-            initialization=initialization,
+            strategy=strategy,
             ctx=ctx
         )
     )
@@ -28,12 +28,13 @@ def do_search(
 )->Either[Exception, SearchResults]:
     executor = SearchExecutor( 
         evaluator=evaluator,
+        parameters=strategy.parameters,
         max_gen=until.max_gen,
         min_fit=until.fit,
         max_evals=until.max_evals
     )  
-    init_population(
-        strategy.initialization, executor.context()
+    return init_population(
+        strategy, executor.context()
     ).then(executor.evolve)
 
 def until(

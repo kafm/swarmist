@@ -5,7 +5,7 @@ import numpy as np
 import math
 from swarmist_bck.core.dictionary import *
 from swarmist_bck.core.strategy import select, all, with_probability
-from swarmist_bck.utils import random
+from swarmist_bck.utils.random import Random
 from .helpers import *
 
 class Cs(UpdateMethodBuilder):
@@ -57,7 +57,7 @@ class Cs(UpdateMethodBuilder):
         pos = ctx.agent.pos
         best = self.centroid(ctx).sum()
         ref = self.reference(ctx).sum()
-        pos = pos + self.alpha() *random.levy2(loc=self.mu(), size=ndims) * np.subtract(ref, best)
+        pos = pos + self.alpha() *Random(ndims).levy2(loc=self.mu()) * np.subtract(ref, best)
         return self.global_recombination(ctx.agent, pos)
     
     def local_update(self, ctx: UpdateContext)->Agent:

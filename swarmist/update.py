@@ -108,9 +108,10 @@ class UpdateBuilder:
       def get(self)->Update:
             def update(ctx: UpdateContext):
                   vars: Dict[str, Union[Pos, IReference, IReferences]] = {}
+                  _ctx = replace(ctx, vars=vars)
                   for key, value in self.helpers.items():
-                        vars[key] = value(replace(ctx, vars=vars))
-                  return self.pos_editor(replace(ctx, vars=vars))
+                        vars[key] = value(_ctx)
+                  return self.pos_editor(_ctx)
             return Update(
                   selection=self.selection(),
                   editor=update,

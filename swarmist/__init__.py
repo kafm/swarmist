@@ -1,3 +1,4 @@
+from swarmist.core.dictionary import Bounds, FitnessFunction
 from swarmist.core.references import SwarmMethods, AgentMethods
 from swarmist.strategy import Strategy
 from swarmist.initialization import  InitializationMethods, TopologyMethods
@@ -5,6 +6,7 @@ from swarmist.recombination import RecombinationMethods
 from swarmist.update import *
 from swarmist.space import minimize, maximize
 from swarmist.search import until, using, search
+from swarmist.utils import benchmark
 
 
 strategy = lambda: Strategy()

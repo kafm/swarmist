@@ -3,7 +3,7 @@ from typing import Optional, List, Callable
 from pymonad.either import Right, Left, Either
 import sys
 import numpy as np
-from swarmist.core.dictionary import SearchContext, Fit, Pos, SearchResults
+from swarmist.core.dictionary import Parameters, SearchContext, Fit, Pos, SearchResults
 from swarmist.core.errors import SearchEnded
 from swarmist.core.evaluator import Evaluator, Evaluation
 from swarmist.core.population import Population
@@ -11,11 +11,13 @@ from swarmist.core.population import Population
 class SearchExecutor:
     def __init__(self, 
         evaluator: Evaluator,
+        parameters: Parameters,
         max_gen: Optional[int],
         min_fit: Optional[float], 
         max_evals:  Optional[int],
     ):
         self.evaluator = evaluator
+        self.parameters = parameters
         self.min_fit = min_fit
         self.max_evals = max_evals
         self.max_gen = sys.maxsize if not max_gen else max_gen
@@ -29,6 +31,7 @@ class SearchExecutor:
     def context(self)->SearchContext:
         return SearchContext(
              evaluate=self.evaluate, 
+             parameters=self.parameters,
              ndims=self.evaluator.ndims, 
              bounds=self.evaluator.bounds,
              curr_gen=self.curr_gen,
@@ -47,14 +50,15 @@ class SearchExecutor:
         self._log_result(evaluation)
         return evaluation 
     
-    def evolve(self, population: Population)->Either[Exception, SearchResults]:
-        if self._next():
-            try: 
-                return self.evolve(population.update(self.context()))
-            except Exception as e: 
-                if not isinstance(e, SearchEnded):
-                    return Left(e)
-                self._log_result(self.curr_pos, self.curr_fit)
+    def evolve(self, population: Population)->Either[Exception, SearchResults]: #TODO find a cleaner way to do this
+        try: 
+            while self._next():
+                population.update(self.context())
+        except Exception as e: 
+            if not isinstance(e, SearchEnded):
+                return Left(e)
+            self._log_result(self.curr_pos, self.curr_fit)
+        print(population.rank(self.context()).info.best().fit)
         return Right(self._results)
         
     def _log_result(self, evaluation: Evaluation):

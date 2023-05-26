@@ -3,6 +3,8 @@ from collections import namedtuple
 #from swarmist_bck.core.dictionary import Agent
 from dataclasses import fields, dataclass
 from functools import reduce
+from swarmist.core.references import Reference
+from swarmist.core.dictionary import Agent
 #import numpy as np
 
 #agent_fields = {field.name: field.type for field in fields(Agent)}
@@ -45,9 +47,30 @@ from functools import reduce
 
 # print(reduce(function=lambda x, y: x + y, sequence=vals, initial=0))
 
-def test(**kargs):
-    print(kargs.pop("b"))
-    for key, value in kargs.items():
-        print(key, value)
+# def test(**kargs):
+#     print(kargs.pop("b"))
+#     for key, value in kargs.items():
+#         print(key, value)
 
-test(a=1, b=2, c=3)
+# test(a=1, b=2, c=3)
+
+@dataclass(frozen=True)
+class SAgent(Agent):
+    def __getitem__(self, item):
+        return getattr(self, item)
+    
+agent = SAgent(
+    pos=[1,2,3],
+    fit=1,
+    best=[1,2,3],
+    trials=0,
+    index= 0, 
+    ndims=3, 
+    delta=[0,0,0],
+    improved= False
+)
+
+reference = Reference(agent)
+
+print(agent["pos"])
+print(reference.get("pos"))

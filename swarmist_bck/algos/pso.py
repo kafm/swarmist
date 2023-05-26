@@ -4,7 +4,7 @@ from dataclasses import replace
 import numpy as np
 from swarmist_bck.core.dictionary import *
 from swarmist_bck.core.strategy import select, all
-from swarmist_bck.utils import random
+from swarmist_bck.utils.random import Random
 from .helpers import *
 
 class Pso(UpdateMethodBuilder):
@@ -44,15 +44,15 @@ class Pso(UpdateMethodBuilder):
     
     def update(self, ctx: UpdateContext)->Agent:
         ndims = ctx.agent.ndims
-        ref = self.reference(ctx).average()
-        pm = self.centroid(ctx).average()
+        ref = self.reference(ctx).avg()
+        pm = self.centroid(ctx).avg()
         pos = ctx.agent.pos
         velocity = self.chi() * (
                 ctx.agent.delta +
-                self.c1() * random.rand(ndims) * (ref - pos) +
-                self.c2() * random.rand(ndims) * (pm - pos)
+                self.c1() * Random(ndims).rand() * (ref - pos) +
+                self.c2() * Random(ndims).rand() * (pm - pos)
         )
-        xpos = self.xover_reference(ctx).average()
+        xpos = self.xover_reference(ctx).avg()
         return self.recombination(ctx.agent,  xpos + velocity)
     
 
