@@ -1,5 +1,3 @@
-from lark import Lark, Transformer, v_args
-import numpy as np
 # Define the grammar using Lark's EBNF notation
 # grammar = """
 #     start: search_stmt | create_stmt
@@ -77,10 +75,40 @@ import numpy as np
 #     ?rand: "rand"i "(" ")"
 #     ?bounds_expr: "bounded"i "by"i "(" NUMBER "," NUMBER ")"
 #     ?size_expr: "size"i "(" INT ")"
-#?agent_prop: "index"i | "trials"i | "best"i | "pos"i | "fit"i | "delta"i | "improved"i
-#?termination_expr: "evaluations"i "= " INT | "generation"i "=" INT | "fitness"i "=" NUMBER 
-#?probability: NUMBER
+
+
+    # ?strategy_expr: "population"i size_expr init_expr 
+    # ?init_expr: "init"i init_pos_expr topology_expr? 
+    # ?init_pos_expr: rand_prefix rand_distribution "(" NUMBER? ("," NUMBER)? ("," NUMBER)? ")"  
+    #     | rand
+    
+    
+        # | "random.beta"i  ( "(" alpha_beta ( "," alpha_beta? ")" )?    -> init_random_beta
+        # | "random.exponential"i ("(" scale ")")?  -> init_random_exponential
+        # | "random.rayleigh"i ("(" scale ")")?  -> init_random_rayleigh
+        # | "random.weibull"i ( "(" shape_scale ( "," shape_scale? ")" )?  -> init_random_weibull
 grammar = """
+    ?start: parameters_expr
+    ?start_bck: init_population_expr parameters_expr?
+    ?parameters_expr: "parameters"i "(" parameter+ ")"
+    ?parameter: key "=" math_expr bounds_expr? -> set_parameter
+    ?init_population_expr: population_size_expr init_expr
+    ?population_size_expr: "population"i size_expr  -> population_size 
+    ?init_expr: "init"i init_pos_expr topology_expr? 
+    ?init_pos_expr: "random"i   -> init_random
+        | "random.uniform"i -> init_random_uniform
+        | "random.normal"i ( "(" loc_scale ("," loc_scale)? ")" )?  -> init_random_normal
+        | "random.lognormal"i ( "(" loc_scale ("," loc_scale)? ")" )?   -> init_random_lognormal
+        | "random.skewnormal"i ( "(" loc_scale_shape ("," loc_scale_shape)? ")" )?  -> init_random_skewnormal
+        | "random.cauchy"i ( "(" loc_scale ("," loc_scale)? ")" )?  -> init_random_cauchy
+        | "random.levy"i ( "(" loc_scale ("," loc_scale)? ")" )?    -> init_random_levy
+        | "random.beta"i ( "(" alpha_beta ("," alpha_beta)? ")" )?  -> init_random_beta
+        | "random.exponential"i ( "(" scale ")" )?  -> init_random_exponential
+        | "random.rayleigh"i ( "(" scale ")" )? -> init_random_rayleigh
+        | "random.weibull"i ( "(" shape_scale ("," shape_scale)? ")" )?  -> init_random_weibull
+    ?topology_expr: "with"i "topology"i topology
+    ?topology: "gbest"i -> gbest_topology
+        | "lbest"i size_expr? -> lbest_topology
     ?agent_prop: "index"i 
         | "trials"i 
         | "best"i 
@@ -88,10 +116,22 @@ grammar = """
         | "fit"i 
         | "delta"i 
         | "improved"i
-    ?termination_expr: "evaluations"i "= " INT 
-        | "generation"i "=" INT 
-        | "fitness"i "=" NUMBER 
-    ?probability: NUMBER -> probability
+    ?loc_scale_shape: loc | scale | shape
+    ?loc_scale:  loc | scale
+    ?shape_scale:  shape | scale
+    ?alpha_beta: alpha | beta
+    ?loc: "loc"i "=" NUMBER -> loc
+    ?scale: "scale"i "=" NUMBER -> scale
+    ?shape: "shape"i "=" NUMBER -> shape
+    ?alpha: "alpha"i "=" NUMBER -> alpha
+    ?beta: "beta"i "=" NUMBER -> beta
+    ?bounds_expr: "bounded"i "by"i "(" value "," value ")" -> bounds
+    ?size_expr: "size"i "(" INT ")" -> size
+    ?termination_expr: "until"i "(" termination_condition ("," termination_condition)* ")"
+    ?termination_condition: "evaluations"i "=" atom -> set_max_evals
+        | "generation"i "=" atom -> set_max_gen
+        | "fitness"i "=" atom -> set_min_fit
+    ?probability: atom -> probability
     ?var: NAME "=" math_expr    -> assign_var
     ?math_expr: math_term
         | math_expr "+" math_term   -> add
@@ -102,10 +142,11 @@ grammar = """
         | math_term "%" atom  -> mod
         | math_term "**" atom -> pow
         | math_term "//" atom -> floordiv
-    ?atom: NUMBER           -> number
+    ?atom: (NUMBER | INT)   -> number_lambda
         | "-" atom         -> neg
-        | NAME             -> var
-        | NAME "[" INT "]" -> var_index
+        | NAME -> string
+        | NAME "TODO" "[" INT "]" -> var_index
+        | "pi"               -> pi
         | "(" math_expr ")"
         | "sin"i "(" math_expr ")" -> sin
         | "cos"i "(" math_expr ")" -> cos
@@ -122,175 +163,15 @@ grammar = """
         | "min"i "(" math_expr ")" -> min
         | "max"i "(" math_expr ")" -> max
         | "avg"i "(" math_expr ")" -> avg
-
+    ?key: NAME -> string
+    ?value: NUMBER  -> number
+        | INT   -> int
+   
+    
+    
     %import common.CNAME -> NAME
     %import common.NUMBER
     %import common.INT
     %import common.WS
     %ignore WS
 """
-# grammar = """
-#     ?start: sum
-#           | NAME "=" sum    -> assign_var
-
-#     ?sum: product
-#         | sum "+" product   -> add
-#         | sum "-" product   -> sub
-
-#     ?product: atom
-#         | product "*" atom  -> mul
-#         | product "/" atom  -> div
-
-#     ?atom: NUMBER           -> number
-#          | "-" atom         -> neg
-#          | NAME             -> var
-#          | "(" sum ")"
-
-#     %import common.CNAME -> NAME
-#     %import common.NUMBER
-#     %import common.WS_INLINE
-
-#     %ignore WS_INLINE
-# """
-
-@v_args(inline=True) 
-class GrammarTransformer(Transformer):
-    from operator import add, sub, mul, truediv as div, floordiv, neg, pow, mod
-    from math import sin, cos, tan, asin, acos, atan, sqrt, log, exp
-    number = float
-    
-    def __init__(self):
-        self.vars = {}
-        
-    def probability(self, value):
-        if value < 0 or value > 1:
-           raise ValueError(f"Probability must be between 0 and 1")
-        return value
-             
-    def abs(self, value):
-        return abs(value)
-    
-    def norm(self, value):
-        return np.linalg.norm(value)
-    
-    def sum(self, value):
-        return sum(value)
-   
-    def min(self, value):
-        return min(value)
-    
-    def max(self, value):
-        return max(value)
-    
-    def avg(self, value):
-        if hasattr(value, '__len__'):
-            return sum(value)/len(value)
-        return value
-   
-    def var(self, name):
-        try:
-            return self.vars[name]
-        except KeyError:
-            raise Exception(f"Variable not found: {name}")
-        
-    def var_index(self, name, index):
-        value = self.var(name)
-        if value is list:
-            try:
-                return value[index]  
-            except KeyError:  
-                raise IndexError(f"Index {index} out of bounds for variable {name}")
-        else:
-            raise ValueError(f"Variable {name} is not a list")
-    
-    
-
-
-lexer = Lark(grammar, parser="lalr", transformer=GrammarTransformer())
-
-def evaluate_expression(expression):
-    tree = lexer.parse(expression)
-    return tree
-
-
-# # Example usage
-expression = "2 * sin(3 + 4)"
-result = evaluate_expression(expression)
-print(f"Expression: {expression}")
-print(f"Result: {result}")
-
-
-# lexer.parse("""
-# SEARCH(
-#     VARIABLE X SIZE(20) BOUNDED BY (10, 20) 
-#     MINIMIZE X**2
-#     CONSTRAINED BY (
-#         X[1] < X[2]   
-#     )
-# )
-# USING (
-#     POPULATION SIZE(30) INIT RAND_UNIFORM() WITH TOPOLOGY LBEST SIZE(3)
-#     SET PARAMETERS (
-#         C1 = 2.05 BOUNDED BY (0, 8)
-#         C2 = 2.05 BOUNDED BY (0, 8) 
-#         CHI = 0.7298 BOUNDED BY (0, 1)
-#     )
-#     SELECT ALL (
-#         USING BINOMIAL RECOMBINATION WITH PROBABILITY 0.5 
-#         UPDATE (
-#             POS = POS + PARAM(CHI) * (
-#                 DELTA + PARAM(C1) * RAND() * (BEST-POS) + PARAM(C2) * RAND() * (SWARM_BEST()-POS)
-#             )
-#         )
-#     )
-# )  
-# UNTIL(
-#     EVALUATIONS = 400
-# ) 
-# """)
-
-# Create the Lark parser using the defined grammar and transformer
-# calculator = Lark(grammar, parser="lalr", transformer=CalcTransformer())
-
-
-# grammar = """
-# <SEARCH> ::= SEARCH ( <SPACE> ) USING ( <STRATEGY> ) UNTIL ( <STOP_CONDITION> )
-# <SPACE> ::= VARIABLE <VARIABLE> SIZE (<SIZE>) BOUNDED BY (<BOUNDS>) MINIMIZE (<FITNESS_FUNC)> CONSTRAINED BY (<CONSTRAINTS>)
-
-
-
-# SEARCH(
-#     VARIABLE X SIZE(20) BOUNDED BY (10, 20) 
-#     MINIMIZE X**2
-#     CONSTRAINED BY (
-#         X[1] < X[2]   
-#     )
-# )
-# USING (
-#     POPULATION SIZE(30) INIT RANDOM WITH TOPOLOGY LBEST(5)
-#     ADD PARAMETERS (
-#          SELF_CONFIDANCE: AUTO(), --SUPPORT UNIFORM/NORMAL/... PARAMETER SETTING. INSPIRE FROM PYMC
-#          ... 
-#     )
-    #   SELECT MAX(TRIALS) WHERE TRIALS > 3 (
-    #     USING BINOMIAL RECOMBINATION WITH PROBABILITY 0.5 
-    #     UPDATE (
-    #         VELOCITY = SELF_CONFIDANCE*(BEST-POS)...
-    #         POS = POS + VELOCITY  ...                       
-    #     ) WHEN IMPROVED
-    #   )  
-#     PARALLEL UPDATE ALL (  
-#        VELOCITY = SELF_CONFIDANCE*(BEST-POS)...
-#        POS = POS + VELOCITY  ...
-#     ) 
-#     PARALLEL UPDATE 3 WITH ROULETTE SELECTION (
-#        POS= BEST + POS ...
-#     )
-#     PARALLEL UPDATE 3 WITH RANDOM SELECTION (
-#        POS= BEST + POS ...
-#     ) WHERE IMPROVED --TO SPLIT PARAMETERS UPDATE FROM POS UPDATE? TO REPLACE FIT OR ONLY POS . R: POS IS THE AUXILIARY. PBEST IS THE REAL POS
-# ) TUNE WITH ACO() --ACO, GE...TO FIND THINGS TO TUNE. OR SHOULD IT BE OUTSITE OF THE DSL. AT PYTHON LEVEL
-# UNTIL(
-#     EVALUATIONS(400)
-# )
-# """

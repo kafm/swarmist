@@ -270,9 +270,9 @@ ParameterValue = Callable[[SearchContext], float]
 @dataclass(frozen=True)
 class Parameter:
     name: str
-    min: float
-    max: float
     value: ParameterValue
+    min: Optional[float]
+    max: Optional[float]
 
 
 class Parameters:
@@ -282,18 +282,22 @@ class Parameters:
     def add(
         self,
         name: str,
-        min: float,
-        max: float,
         value: Union[float, int, ParameterValue],
+        min: Optional[float] = None,
+        max: Optional[float] = None,
     ):
         self._parameters[name] = Parameter(
-            name, min, max, value if callable(value) else lambda _: value
+            name, 
+            value if callable(value) else lambda _: value, 
+            min, max 
         )
 
     def get(self, name: str, ctx: SearchContext) -> float:
         param = self._parameters[name]
         return np.clip(param.value(ctx), param.min, param.max)
 
+    def __repr__(self):
+        return f"Parameters({self._parameters})"
 
 @dataclass(frozen=True)
 class ISwarmContext(AbstractInfo[IReferences, IReference]):
