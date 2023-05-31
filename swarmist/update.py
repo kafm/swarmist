@@ -21,12 +21,15 @@ def all()->Selection:
       f: Selection = lambda info: info.all()
       return lambda: f
 
-def quantity(size: int = 1)->Callable[..., Selection]:
-      def callback()->Selection:
-            f: Selection = lambda info: info.all()[0:min(size,info.size())]
-            assert_at_least(size, 1, "Size of agents to pick")
-            return f
+def order(selection: Selection, key: Order, reverse: bool = False)->Selection:
+      def callback(info: GroupInfo)->Selection:
+            method = key if callable(key) else lambda agent: getattr(agent, key)
+            return selection(info).sort(key=method, reverse=reverse)
       return callback
+
+def limit(selection: Selection, size: int)->Selection:
+      f: Selection = lambda info: selection(info)[0:min(size,info.size())]
+      return lambda: f
 
 def roulette(size: int = None)->Callable[...,Selection]:
       def callback()->Selection:

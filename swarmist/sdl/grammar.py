@@ -5,9 +5,29 @@ grammar = """
     ?parameters_expr: "parameters"i "(" parameter+ ")"
     ?parameter: key "=" math_expr bounds_expr? -> set_parameter
     ?bounds_expr: "bounded"i "by"i "(" value "," value ")" -> bounds
-    ?update_expr: recombination_expr? "update"i "(" update_vars ")"
+    ?update_expr: selection_expr "(" recombination_expr? "update"i "(" update_vars ")" condition_expr? ")"
     ?update_vars:  update_var+ -> update_pos
     ?update_var: key "=" math_expr -> set_update_var
+    ?selection_expr: "select"i selection_size order_by? -> all_selection
+        | "select"i selection_size "where"i where order_by? -> filter_selection
+        | "with"i "roulette"i "select"i selection_size -> roulette_selection
+        | "with"i "random"i "select"i selection_size -> random_selection
+        | "with"i "probability"i probability "select"i selection_size -> probabilistic_selection 
+    ?selection_size: size_expr -> selection_size
+        | "all"i -> selection_size
+    ?where: where_condition 
+        | where_condition "and"i where_condition -> and_
+        | where_condition "or"i where_condition -> or_
+        | "(" where_condition ")"
+    ?where_condition: agent_prop "<" math_expr -> lt
+        | agent_prop "<=" math_expr -> le
+        | agent_prop ">" math_expr -> gt
+        | agent_prop ">=" math_expr -> ge
+        | agent_prop "=" math_expr -> eq
+        | agent_prop "!=" math_expr -> ne
+    ?order_by: "order"i "by"i agent_prop asc_desc? -> order_by
+    ?asc_desc: "asc"i
+        | "desc"i  -> reverse_order 
     ?recombination_expr: "using"i recombination_method
         | "reset"i "agent"i -> init_random_recombination
     ?recombination_method: "binomial"i "recombination"i "with"i "probability"i probability  -> binomial_recombination
@@ -22,13 +42,14 @@ grammar = """
         | "pick_roulette"i "(" reference_unique_prop? integer? reference_replace_prop? ")"   -> swarm_pick_roulette
         | "rand_to_best" "(" "with"i "probability"i probability ")" -> swarm_rand_to_best
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
-        | "trials"i -> agent_trials
+        | "param"i "(" key ")" -> get_parameter
+        | agent_prop
+    ?agent_prop:  "trials"i -> agent_trials
         | "best"i   -> agent_best
         | "pos"i    -> agent_pos
         | "fit"i    -> agent_fit
         | "delta"i  -> agent_delta
         | "improved"i   -> agent_improved
-        | "param"i "(" key ")" -> get_parameter
     ?reference_unique_prop: "unique"i -> true
     ?reference_replace_prop: "with"i "replacement"i -> true
     ?probability: value -> probability
@@ -53,6 +74,16 @@ grammar = """
         | "low"i "=" math_expr -> random_low
         | "high"i "=" math_expr -> random_high
         | "size"i "=" math_expr -> random_size
+    ?conditions_expr: condition_expr 
+        | conditions_expr "and"i condition_expr -> and_
+        | conditions_expr "or"i condition_expr -> or_
+        | "(" conditions_expr ")"
+    ?condition_expr: math_expr "<" math_expr -> lt
+        | math_expr "<=" math_expr -> le
+        | math_expr ">" math_expr -> gt
+        | math_expr ">=" math_expr -> ge
+        | math_expr "=" math_expr -> eq
+        | math_expr "!=" math_expr -> ne
     ?math_expr: math_term
         | math_expr "+" math_term   -> add
         | math_expr "-" math_term   -> sub
@@ -82,6 +113,7 @@ grammar = """
         | "min"i "(" math_expr ")" -> min
         | "max"i "(" math_expr ")" -> max
         | "avg"i "(" math_expr ")" -> avg
+        | "if_then"i "(" condition_expr "," math_expr ","  math_expr ")"    -> if_then
         | references_expr
         | random_expr
         | value -> value_to_lambda

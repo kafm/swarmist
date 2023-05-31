@@ -23,12 +23,14 @@ PARAMETERS (
     C2 = 2.05 BOUNDED BY (0, 8) 
     CHI = 0.7298 BOUNDED BY (0, 1)
 )
-USING BINOMIAL RECOMBINATION WITH PROBABILITY 0.5 
-UPDATE (
-    VELOCITY = PARAM(CHI) * (
-        DELTA + PARAM(C1) * RANDOM() * (BEST-POS) + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
+SELECT ALL where improved = TRUE and best > 4 order by fit (
+    USING BINOMIAL RECOMBINATION WITH PROBABILITY 0.5 
+    UPDATE (
+        VELOCITY = PARAM(CHI) * (
+            DELTA + PARAM(C1) * RANDOM() * (BEST-POS) + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
+        )
+        POS = POS + VELOCITY
     )
-    POS = POS + VELOCITY
 )
 """
 res = Parser().parse(expression)

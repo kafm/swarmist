@@ -1,4 +1,6 @@
 from lark import v_args
+from typing import cast
+from swarmist.core.dictionary import Agent
 from swarmist.core.references import AgentMethods, SwarmMethods
 from .expressions import Expressions
 
@@ -55,4 +57,28 @@ class ReferencesExpressions(Expressions):
 
     def agent_improved(self):
         return agent_methods.improved()
+    
+    def self_agent_pos(self):
+        return lambda a: cast(Agent, a).pos
+
+    def self_agent_best(self):
+        return lambda a: cast(Agent, a).best
+
+    def self_agent_fit(self):
+        return lambda a: cast(Agent, a).fit
+
+    def self_agent_index(self):
+        return lambda a: cast(Agent, a).index
+
+    def self_agent_ndims(self):
+        return lambda a: cast(Agent, a).ndims
+
+    def self_agent_delta(self):
+        return lambda a: cast(Agent, a).delta
+
+    def self_agent_trials(self):
+        return lambda a: cast(Agent, a).trials
+
+    def self_agent_improved(self):
+        return lambda a: cast(Agent, a).improved
 

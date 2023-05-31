@@ -12,6 +12,9 @@ class MathExpressions(Expressions):
 
     def and_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) and fetch_value(y, ctx)
+    
+    def if_then_else(self, x, y, z):
+        return lambda ctx=None: fetch_value(y, ctx) if fetch_value(x, ctx) else fetch_value(z, ctx)
 
     def or_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) or fetch_value(y, ctx)

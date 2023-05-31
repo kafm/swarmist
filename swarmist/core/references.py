@@ -197,33 +197,32 @@ class SwarmMethods:
 
 
 class AgentMethods:
-    def index(self) -> Callable[[UpdateContext], int]:
-        return lambda ctx: ctx.agent.index
+    def index(self) -> Callable[[Union[UpdateContext, Agent]], int]:
+        return lambda ctx: ctx.agent.index if not isinstance(ctx, Agent) else ctx.index
 
-    def ndims(self) -> Callable[[UpdateContext], int]:
-        return lambda ctx: ctx.agent.ndims
+    def ndims(self) -> Callable[[Union[UpdateContext, Agent]], int]:
+        return lambda ctx: ctx.agent.ndims if not isinstance(ctx, Agent) else ctx.ndims
 
-    def delta(self) -> Callable[[UpdateContext], Pos]:
-        return lambda ctx: ctx.agent.delta
+    def delta(self) -> Callable[[Union[UpdateContext, Agent]], Pos]:
+        return lambda ctx: ctx.agent.delta if not isinstance(ctx, Agent) else ctx.delta
 
-    def trials(self) -> Callable[[UpdateContext], int]:
-        return lambda ctx: ctx.agent.trials
-
-    def improved(self) -> Callable[[UpdateContext], bool]:
-        return lambda ctx: ctx.agent.improved
-
-    def best(self) -> Callable[[UpdateContext], Pos]:
-        return lambda ctx: ctx.agent.best
-
-    def pos(self) -> Callable[[UpdateContext], Pos]:
-        return lambda ctx: ctx.agent.pos
-
-    def fit(self) -> Callable[[UpdateContext], Fit]:
-        return lambda ctx: ctx.agent.fit
-
-    def random(self) -> Callable[[UpdateContext], Pos]:
-        return lambda ctx: ctx.random.uniform(
-            low=ctx.search_context.bounds.min,
-            high=ctx.search_context.bounds.max,
-            size=ctx.agent.ndims,
+    def trials(self) -> Callable[[Union[UpdateContext, Agent]], int]:
+        return (
+            lambda ctx: ctx.agent.trials if not isinstance(ctx, Agent) else ctx.trials
         )
+
+    def improved(self) -> Callable[[Union[UpdateContext, Agent]], bool]:
+        return (
+            lambda ctx: ctx.agent.improved
+            if not isinstance(ctx, Agent)
+            else ctx.improved
+        )
+
+    def best(self) -> Callable[[Union[UpdateContext, Agent]], Pos]:
+        return lambda ctx: ctx.agent.best if not isinstance(ctx, Agent) else ctx.best
+
+    def pos(self) -> Callable[[Union[UpdateContext, Agent]], Pos]:
+        return lambda ctx: ctx.agent.pos if not isinstance(ctx, Agent) else ctx.pos
+
+    def fit(self) -> Callable[[Union[UpdateContext, Agent]], Fit]:
+        return lambda ctx: ctx.agent.fit if not isinstance(ctx, Agent) else ctx.fit
