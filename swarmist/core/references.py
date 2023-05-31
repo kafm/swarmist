@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 from functools import reduce
-from typing import List, Callable, Union
+from typing import List, Callable, Union, Optional
 import numpy as np
 from swarmist.core.dictionary import (
     Pos,
@@ -12,6 +12,8 @@ from swarmist.core.dictionary import (
     IReference,
     IReferences,
 )
+from swarmist.core.random import Random
+
 
 @dataclass(frozen=True)
 class Reference(IReference):
@@ -147,16 +149,14 @@ class References(IReferences):
 
 
 class SwarmMethods:
-    def best(self) -> Callable[[UpdateContext], Reference]:
-        return lambda ctx: ctx.swarm.best()
-
-    def worse(self) -> Callable[[UpdateContext], Reference]:
-        return lambda ctx: ctx.swarm.worse()
-
-    def k_best(self, size: int) -> Callable[[UpdateContext], References]:
+    def best(self, size: Optional[int] = None) -> Callable[[UpdateContext], Reference]:
+        if not size:
+            return lambda ctx: ctx.swarm.best()
         return lambda ctx: ctx.swarm.k_best(size)
 
-    def k_worse(self, size: int) -> Callable[[UpdateContext], References]:
+    def worse(self, size: Optional[int] = None) -> Callable[[UpdateContext], Reference]:
+        if not size:
+            return lambda ctx: ctx.swarm.worse()
         return lambda ctx: ctx.swarm.k_worse(size)
 
     def all(self) -> Callable[[UpdateContext], References]:
@@ -182,22 +182,44 @@ class SwarmMethods:
         return callback
 
     def pick_random(
-        self, size: int = None, replace: bool = False
+        self, size: Optional[int] = None, replace: bool = False, unique: bool = False
     ) -> Callable[[UpdateContext], Union[Reference, References]]:
+        if unique:
+            return lambda ctx: ctx.swarm.pick_random_unique(size, replace=replace)
         return lambda ctx: ctx.swarm.pick_random(size, replace=replace)
 
     def pick_roulette(
-        self, size: int = None, replace: bool = False
+        self, size: Optional[int] = None, replace: bool = False, unique: bool = False
     ) -> Callable[[UpdateContext], Reference]:
+        if unique:
+            return lambda ctx: ctx.swarm.pick_roulette_unique(size, replace=replace)
         return lambda ctx: ctx.swarm.pick_roulette(size, replace=replace)
 
 
 class AgentMethods:
+    def index(self) -> Callable[[UpdateContext], int]:
+        return lambda ctx: ctx.agent.index
+
+    def ndims(self) -> Callable[[UpdateContext], int]:
+        return lambda ctx: ctx.agent.ndims
+
+    def delta(self) -> Callable[[UpdateContext], Pos]:
+        return lambda ctx: ctx.agent.delta
+
+    def trials(self) -> Callable[[UpdateContext], int]:
+        return lambda ctx: ctx.agent.trials
+
+    def improved(self) -> Callable[[UpdateContext], bool]:
+        return lambda ctx: ctx.agent.improved
+
     def best(self) -> Callable[[UpdateContext], Pos]:
         return lambda ctx: ctx.agent.best
 
     def pos(self) -> Callable[[UpdateContext], Pos]:
         return lambda ctx: ctx.agent.pos
+
+    def fit(self) -> Callable[[UpdateContext], Fit]:
+        return lambda ctx: ctx.agent.fit
 
     def random(self) -> Callable[[UpdateContext], Pos]:
         return lambda ctx: ctx.random.uniform(

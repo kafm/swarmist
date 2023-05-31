@@ -21,32 +21,38 @@ def all()->Selection:
       f: Selection = lambda info: info.all()
       return lambda: f
 
-def roulette(size: int = None)->Callable[...,Selection]:
+def quantity(size: int = 1)->Callable[..., Selection]:
       def callback()->Selection:
-            f: Selection = lambda info: info.pick_roulette(size=size if size else info.size())
-            assert_at_least(size, 1, "Size of agents to pick with roulette")
+            f: Selection = lambda info: info.all()[0:min(size,info.size())]
+            assert_at_least(size, 1, "Size of agents to pick")
             return f
       return callback
 
-def with_probability(p: float = .25)->Callable[..., Selection]:
+def roulette(size: int = None)->Callable[...,Selection]:
       def callback()->Selection:
-            f: Selection = lambda info: info.filter(lambda _: np.random.uniform() < p)
+            f: Selection = lambda info: info.pick_roulette(size=min(size,info.size()) if size else info.size())
             return f
       return callback
+
+def with_probability(p: float = .25, size: int = None)->Callable[..., Selection]:
+      def callback(info: GroupInfo)->Selection:
+            agents = info.filter(lambda _: np.random.uniform() < p)
+            if not size or size >= len(agents):
+                  return agents
+            else:
+                  return agents[0:size]
+      return lambda: callback
             
 def random(size: int = None)->Callable[..., Selection]:
-      def callback()->Selection:
-            f: Selection = lambda info: info.pick_random(size)
-            assert_at_least(size, 1, "Size of agents to pick randomly")
-            return f
-      return callback
+      def callback(info: GroupInfo)->Selection:
+            return info.pick_random(size=min(size,info.size()) if size else info.size())
+      return lambda: callback
 
 def filter(condition: Condition, size: int = None)->Callable[..., Selection]:
       def callback()->Selection:
             param = "When condition"
-            f: Selection = lambda info: info.filter(size, condition)
+            f: Selection = lambda info: info.filter(size if size else info.size(), condition)
             assert_not_null(condition, param)
-            assert_at_least(size, 1, param)
             assert_callable(condition, param)
             return f
       return callback
@@ -88,7 +94,7 @@ class UpdateBuilder:
       def __init__(self, selection: Callable[..., Selection]):
             self.selection = selection
             self.recombinator: Recombination = RecombinationMethods().replace_all()
-            self.helpers: OrderedDict[str, int] = OrderedDict()
+            self.helpers: OrderedDict[str, PosHelper] = OrderedDict()
             self.pos_editor: PosEditor = None
             self.condition: Optional[Condition] = None
 

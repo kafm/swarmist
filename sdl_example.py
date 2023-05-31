@@ -1,18 +1,30 @@
-from swarmist.sdl.parser import parse
+from swarmist.sdl_old.parser import parse
 import math
 # # Example usage
 #expression = "until (evaluations=1000)"
 #expression = "population size(30) init random.normal(loc=0,scale=1) with topology lbest size(3)"
 #expression = "1 + 2 * 4 * (sin(90) * pi)"
+# expression = """
+#     PARAMETERS (
+#         X=1 + 2 * 4 * (sin(90) * pi) BOUNDED BY (10, 20)
+#         Y=30
+#     )
+# """
+
+# and not improved and (best < 10 or pos > 10)
 expression = """
-    PARAMETERS (
-        X=1 + 2 * 4 * (sin(90) * pi) BOUNDED BY (10, 20)
-        Y=30
-    )
+PARAMETERS (
+    X=1
+    Y=30
+)
+POPULATION SIZE(30) INIT RANDOM.NORMAL(loc=0,scale=1) WITH TOPOLOGY LBEST SIZE(3)
+with probability .5  SELECT where improved = TRUE  order by fit desc limit 1 (
+    USING BINOMIAL RECOMBINATION WITH PROBABILITY 0.5 
+)
 """
 res = parse(expression)
-print(res())
-print(1 + 2 * 4 * (math.sin(90) * math.pi))
+#print(res())
+#print(1 + 2 * 4 * (math.sin(90) * math.pi))
 
 
 # lexer.parse("""
