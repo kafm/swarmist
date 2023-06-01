@@ -1,8 +1,9 @@
 from typing import Any, Optional, cast
 from lark import Lark, Transformer, v_args, Token
+from typing import List
 from functools import reduce
 import swarmist as sw
-from swarmist.core.dictionary import UpdateContext
+from swarmist.core.dictionary import UpdateContext, Update
 from .grammar import grammar
 from .expressions import *
 
@@ -10,7 +11,9 @@ from .expressions import *
 @v_args(inline=True)
 class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressions, UpdateExpressions):
     def __init__(self):
+        super().__init__()
         self.strategy = sw.strategy()
+        #print(self.get_pipeline())
 
     def get_var(self, name):
         return lambda ctx=None: cast(UpdateContext, ctx).get(name)

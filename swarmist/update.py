@@ -17,17 +17,17 @@ def select(selection: Callable[...,Selection])->UpdateBuilder:
             return f
       return UpdateBuilder(selection=callback)
 
-def all()->Selection:
+def all()->Callable[...,Selection]:
       f: Selection = lambda info: info.all()
       return lambda: f
 
-def order(selection: Selection, key: Order, reverse: bool = False)->Selection:
+def order(selection: Selection, key: Order, reverse: bool = False)->Callable[...,Selection]:
       def callback(info: GroupInfo)->Selection:
             method = key if callable(key) else lambda agent: getattr(agent, key)
             return selection(info).sort(key=method, reverse=reverse)
-      return callback
+      return lambda: callback
 
-def limit(selection: Selection, size: int)->Selection:
+def limit(selection: Selection, size: int)->Callable[...,Selection]:
       f: Selection = lambda info: selection(info)[0:min(size,info.size())]
       return lambda: f
 
@@ -113,6 +113,7 @@ class UpdateBuilder:
       
       def where(self, condition: Condition)->UpdateBuilder:
             self.condition = condition
+            return self
       
       def get(self)->Update:
             def update(ctx: UpdateContext):

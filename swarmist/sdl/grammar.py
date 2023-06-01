@@ -1,11 +1,14 @@
 #?var: NAME "=" math_expr    -> assign_var
+#parameters_expr? init_population_expr
 grammar = """
     ?start: strategy_expr
-    ?strategy_expr: parameters_expr? update_expr
+    ?strategy_expr: parameters_expr? update_expr+
     ?parameters_expr: "parameters"i "(" parameter+ ")"
     ?parameter: key "=" math_expr bounds_expr? -> set_parameter
     ?bounds_expr: "bounded"i "by"i "(" value "," value ")" -> bounds
-    ?update_expr: selection_expr "(" recombination_expr? "update"i "(" update_vars ")" condition_expr? ")"
+    ?update_expr: selection_expr "(" update_method ")" -> update
+    ?update_method: recombination_expr "update"i "(" update_vars ")" ("when"i where)? -> recombine_pos
+        | "update"i "(" update_vars ")" ("when"i where)? -> replace_all_pos
     ?update_vars:  update_var+ -> update_pos
     ?update_var: key "=" math_expr -> set_update_var
     ?selection_expr: "select"i selection_size order_by? -> all_selection
@@ -15,16 +18,16 @@ grammar = """
         | "with"i "probability"i probability "select"i selection_size -> probabilistic_selection 
     ?selection_size: size_expr -> selection_size
         | "all"i -> selection_size
-    ?where: where_condition 
-        | where_condition "and"i where_condition -> and_
-        | where_condition "or"i where_condition -> or_
-        | "(" where_condition ")"
+    ?where: where_condition
+        | where "and"i where_condition -> and_
+        | where "or"i where_condition -> or_ 
     ?where_condition: agent_prop "<" math_expr -> lt
         | agent_prop "<=" math_expr -> le
         | agent_prop ">" math_expr -> gt
         | agent_prop ">=" math_expr -> ge
         | agent_prop "=" math_expr -> eq
         | agent_prop "!=" math_expr -> ne
+        | "(" where ")"
     ?order_by: "order"i "by"i agent_prop asc_desc? -> order_by
     ?asc_desc: "asc"i
         | "desc"i  -> reverse_order 
@@ -77,13 +80,13 @@ grammar = """
     ?conditions_expr: condition_expr 
         | conditions_expr "and"i condition_expr -> and_
         | conditions_expr "or"i condition_expr -> or_
-        | "(" conditions_expr ")"
     ?condition_expr: math_expr "<" math_expr -> lt
         | math_expr "<=" math_expr -> le
         | math_expr ">" math_expr -> gt
         | math_expr ">=" math_expr -> ge
         | math_expr "=" math_expr -> eq
         | math_expr "!=" math_expr -> ne
+        | "(" conditions_expr ")"
     ?math_expr: math_term
         | math_expr "+" math_term   -> add
         | math_expr "-" math_term   -> sub

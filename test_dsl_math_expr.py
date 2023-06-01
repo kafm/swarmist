@@ -17,6 +17,8 @@ search_context = SearchContext(
 # present = "ndims" in search_context
 # print(present)
 #expression = """pick_random(unique 3 with replacement)"""
+
+#POPULATION SIZE(30) INIT RAND_UNIFORM() WITH TOPOLOGY LBEST SIZE(3)
 expression = """
 PARAMETERS (
     C1 = 2.05 BOUNDED BY (0, 8)
@@ -30,7 +32,7 @@ SELECT ALL where improved = TRUE and best > 4 order by fit (
             DELTA + PARAM(C1) * RANDOM() * (BEST-POS) + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
         )
         POS = POS + VELOCITY
-    )
+    ) WHEN POS > 0 AND (POS < 5 OR IMPROVED = TRUE)
 )
 """
 res = Parser().parse(expression)
