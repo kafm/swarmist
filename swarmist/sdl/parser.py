@@ -3,21 +3,28 @@ from lark import Lark, v_args
 from typing import List, Callable
 import swarmist as sw
 from swarmist.update import UpdateBuilder
-from swarmist.core.dictionary import UpdateContext, Selection, Bounds, Agent, StopCondition
+from swarmist.core.dictionary import UpdateContext, Selection, Bounds, Agent
 from .grammar import grammar
 from .expressions import *
 
 
 @v_args(inline=True)
-class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressions, InitExpressions, UpdateExpressions):
+class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressions, InitExpressions, UpdateExpressions, SpaceExpressions):
     def __init__(self):
         self._strategy = sw.strategy()
         self._pipeline: List[UpdateBuilder] = []
+        self._get_var = None
 
+    def search(self, space_assets: SpaceAssets, strategy: sw.Strategy, stop_condition):
+        self._get_var = space_assets.get_var
+        return lambda: sw.search(
+            space_assets.space, 
+            sw.until(**stop_condition),
+            sw.using(strategy)
+        )
 
-    def build_strategy(self, *args):
+    def build_strategy(self, *_):
         return self._strategy.pipeline(*self._pipeline)
-        #return self._strategy
 
     def init(self, pop_size, init_method, topology=None):
         self._strategy.init(init_method, pop_size)
@@ -33,11 +40,14 @@ class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressio
 
     def get_var(self, name):
         def callback(ctx=None):
-            if not ctx: 
+            if ctx is None: 
                 raise ValueError("Getting var with no context is not allowed")
             elif isinstance(ctx, Agent):
                 return ctx[name]
-            return cast(UpdateContext, ctx).get(name)
+            elif isinstance(ctx, UpdateContext):
+                return cast(UpdateContext, ctx).get(name)
+            else:
+                return self._get_var(ctx, name)
         return callback
 
     def get_parameter(self, name):
@@ -61,7 +71,13 @@ class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressio
 
     def bounds(self, lower, upper):
         return sw.Bounds(lower, upper)
-
+    
+    def bound(self, value):
+        return value
+    
+    def neg_bound(self, value):
+        return -value
+      
     def assign_var(self, name, value):
         self.vars[name] = value
         return value

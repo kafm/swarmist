@@ -26,31 +26,42 @@ st.pipeline(
     .recombinant(sw.recombination.replace_all())
 )
 
+    # MINIMIZE X**2
+    # CONSTRAINED BY (
+    #     X[1] < X[2]   
+    # )
+
+
 expression = """
-PARAMETERS (
-    C1 = 2.05 BOUNDED BY (0, 8)
-    C2 = 2.05 BOUNDED BY (0, 8) 
-    CHI = 0.7298 BOUNDED BY (0, 1)
+SEARCH(
+    VAR X SIZE(20) BOUNDED BY (-5.12, 5.12) 
+    MINIMIZE SUM(X**2)
 )
-POPULATION SIZE(40) INIT RANDOM_UNIFORM()
-SELECT ALL (
-    UPDATE (
-        VELOCITY= PARAM(CHI) * (
-            DELTA 
-            + PARAM(C1) * RANDOM() * (BEST-POS)
-            + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
-        )
-        POS = POS + VELOCITY
-    ) 
+USING (
+    PARAMETERS (
+        C1 = 2.05 BOUNDED BY (0, 8)
+        C2 = 2.05 BOUNDED BY (0, 8) 
+        CHI = 0.7298 BOUNDED BY (0, 1)
+    )
+    POPULATION SIZE(40) INIT RANDOM_UNIFORM()
+    SELECT ALL (
+        UPDATE (
+            VELOCITY= PARAM(CHI) * (
+                DELTA 
+                + PARAM(C1) * RANDOM() * (BEST-POS)
+                + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
+            )
+            POS = POS + VELOCITY
+        ) 
+    )
 )
-"""
-termination_expr = """
 UNTIL (
-    EVALUATIONS = 1000
+    GENERATION = 1000
 )
 """
-strategy = Parser().parse(expression, start="strategy_expr")
-stop_condition = Parser().parse(termination_expr, start="termination_expr")
+#.format(bounds=bounds)
+query = Parser().parse(expression) #, start="strategy_expr"
+query()
 # strategy._pipeline_builders[0].update(
 #         gbest=sw.swarm.best(),
 #         pbest=sw.agent.best(),
@@ -61,13 +72,13 @@ stop_condition = Parser().parse(termination_expr, start="termination_expr")
 #         ),
 #         pos=lambda ctx: ctx.agent.pos + ctx.get("velocity"),
 # ) 
-res = sw.search(
-    sw.minimize(
-        problem, bounds, dimensions=numDimensions
-    ),#.constrained_by(lambda pos: pos),
-    sw.until(**stop_condition),
-    sw.using(strategy),
-)
+# res = sw.search(
+#     sw.minimize(
+#         problem, bounds, dimensions=numDimensions
+#     ),#.constrained_by(lambda pos: pos),
+#     sw.until(**stop_condition),
+#     sw.using(strategy),
+# )
 
 # print("=========================NORMAL=========================")
 

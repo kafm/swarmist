@@ -19,8 +19,8 @@ ConstraintsChecker = List[ConstraintChecker]
 
 @dataclass(frozen=True)
 class Bounds:
-    min: float
-    max: float
+    min: float | List[float]
+    max: float | List[float]
 
 
 @dataclass(frozen=True)

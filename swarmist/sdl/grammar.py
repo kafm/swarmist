@@ -1,7 +1,17 @@
 #?var: NAME "=" math_expr    -> assign_var
 #parameters_expr? init_population_expr
+
+#TODO CONSTRAINTS
+# constraints_expr?
+# ?constraints_expr: "subject"i "to"i constraint+
+# "var"i key size_expr? bounds_expr  -> set_var
 grammar = """
-    ?start: strategy_expr
+    ?start: "search"i "(" space_expr ")" "using"i "(" strategy_expr ")" "until"i "(" termination_expr ")" -> search
+    ?space_expr: variables objective_function_expr -> space
+    ?objective_function_expr: "minimize"i math_expr -> minimize
+        | "maximize"i math_expr -> maximize
+    ?variables: variable+ -> set_vars
+    ?variable: "var"i key size_expr? bounds_expr  -> var
     ?strategy_expr: parameters_expr? init_population_expr update_expr+ -> build_strategy
     ?parameters_expr: "parameters"i "(" parameter+ ")"
     ?parameter: key "=" math_expr bounds_expr? -> set_parameter
@@ -20,7 +30,9 @@ grammar = """
     ?topology_expr: "with"i "topology"i topology
     ?topology: "gbest"i -> gbest_topology
         | "lbest"i size_expr? -> lbest_topology
-    ?bounds_expr: "bounded"i "by"i "(" value "," value ")" -> bounds
+    ?bounds_expr: "bounded"i "by"i "(" bound "," bound ")" -> bounds
+    ?bound: value -> bound 
+        | "-" value -> neg_bound
     ?update_expr: selection_expr "(" update_method ")" -> update
     ?update_method: recombination_expr "update"i "(" update_vars ")" ("when"i where)? -> recombine_pos
         | "update"i "(" update_vars ")" ("when"i where)? -> replace_all_pos
@@ -73,7 +85,7 @@ grammar = """
     ?reference_replace_prop: "with"i "replacement"i -> true
     ?probability: value -> probability
     ?size_expr: "size"i "(" integer ")"
-    ?termination_expr: "until"i "(" termination_condition+ ")" -> stop_condition
+    ?termination_expr: termination_condition+ -> stop_condition
     ?termination_condition: "evaluations"i "=" integer -> set_max_evals
         | "generation"i "=" integer -> set_max_gen
         | "fitness"i "=" float -> set_min_fit
@@ -119,8 +131,7 @@ grammar = """
         | math_term "**" atom -> pow
         | math_term "//" atom -> floordiv
     ?atom: "-" atom         -> neg
-        | NAME -> get_var
-        | NAME "TODO" "[" INT "]" -> var_index
+        | key -> get_var
         | "pi" "(" ")"               -> pi
         | "(" math_expr ")"
         | "sin"i "(" math_expr ")" -> sin
@@ -144,7 +155,8 @@ grammar = """
         | value -> value_to_lambda
         | bool -> value_to_lambda
     ?key: NAME -> string
-    ?value: float | integer
+    ?value: float 
+        | integer
     ?integer: INT -> integer
     ?float: NUMBER -> number
     ?bool: "true"i -> true

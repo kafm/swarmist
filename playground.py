@@ -7,7 +7,11 @@ from swarmist.core.references import Reference
 from swarmist.core.dictionary import Agent
 import numpy as np
 
-print(np.equal(False, True))
+a = np.array([])
+b = np.array([4, 5])
+print(np.concatenate((a, b)))
+j = a+b
+print(j[-1])
 
 #agent_fields = {field.name: field.type for field in fields(Agent)}
 #print(agent_fields)
