@@ -57,7 +57,7 @@ class SearchExecutor:
         except Exception as e: 
             if not isinstance(e, SearchEnded):
                 return Left(e)
-            self._log_result(self.curr_pos, self.curr_fit)
+            self._log_result(Evaluation(self.curr_pos, self.curr_fit))
         print(population.rank(self.context()).info.best().fit)
         return Right(self._results)
         

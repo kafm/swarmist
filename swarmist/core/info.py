@@ -50,7 +50,7 @@ class AgentsInfo(GroupInfo):
         return self.gsize
     
     def filter(self, f: Callable[[Agent], bool])->AgentList: 
-        return filter(f,self.agents)
+        return list(filter(f,self.agents))
     
     def best(self)->Agent:
         return self.agents[self.rank[0]] 

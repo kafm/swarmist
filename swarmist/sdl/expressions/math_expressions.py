@@ -12,6 +12,7 @@ class MathExpressions(Expressions):
 
     def and_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) and fetch_value(y, ctx)
+  
     
     def if_then_else(self, x, y, z):
         return lambda ctx=None: fetch_value(y, ctx) if fetch_value(x, ctx) else fetch_value(z, ctx)
@@ -20,24 +21,24 @@ class MathExpressions(Expressions):
         return lambda ctx=None: fetch_value(x, ctx) or fetch_value(y, ctx)
 
     def lt(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) < fetch_value(y, ctx)
+        return lambda ctx=None: np.all(np.less(fetch_value(x, ctx), fetch_value(y, ctx)))
 
     def le(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) <= fetch_value(y, ctx)
+        return lambda ctx=None: np.all(np.less_equal(fetch_value(x, ctx), fetch_value(y, ctx)))
 
     def gt(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) > fetch_value(y, ctx)
+        return lambda ctx=None: np.all(np.greater(fetch_value(x, ctx), fetch_value(y, ctx)))
 
     def ge(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) >= fetch_value(y, ctx)
+        return lambda ctx=None: np.all(np.greater_equal(fetch_value(x, ctx), fetch_value(y, ctx)))
 
     def eq(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) == fetch_value(y, ctx)
+        return lambda ctx=None: np.all(np.equal(fetch_value(x, ctx), fetch_value(y, ctx)))
 
     def ne(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) != fetch_value(y, ctx)
+        return lambda ctx=None: np.all(np.not_equal(fetch_value(x, ctx), fetch_value(y, ctx)))
 
-    def add(self, x, y, z=None):
+    def add(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) + fetch_value(y, ctx)
 
     def sub(self, x, y):

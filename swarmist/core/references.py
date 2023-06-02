@@ -69,6 +69,8 @@ class Reference(IReference):
 
     def _get_val(self, val: Union[Reference, Pos, int, float]) -> Pos:
         return val.get() if isinstance(Reference, str) else val
+    
+
 
 
 @dataclass(frozen=True)

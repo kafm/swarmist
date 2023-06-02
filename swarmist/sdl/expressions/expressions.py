@@ -1,4 +1,6 @@
 from lark import v_args, Transformer
+from typing import cast
+from swarmist.core.dictionary import UpdateContext, SearchContext
 
 @v_args(inline=True)
 class Expressions(Transformer):
@@ -23,8 +25,14 @@ class Expressions(Transformer):
 def fetch_dimensions(x, ctx=None):
     size = fetch_value(x, ctx)
     if not size: 
-        ctx_dict = ctx.__dict__ if ctx else {}
-        size = ctx_dict["ndims"] if "ndims" in ctx_dict else 1
+        if not ctx:
+            return 1
+        elif isinstance(ctx, UpdateContext):
+            return cast(UpdateContext, ctx).agent.ndims
+        elif isinstance(ctx, SearchContext):
+            return cast(SearchContext, ctx).ndims
+        else: 
+            raise ValueError(f"Invalid context type: {type(ctx)}")
     return int(size)
 
 

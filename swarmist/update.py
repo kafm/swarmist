@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import List, Optional, Callable, Dict, Union
+from functools import partial
 from collections import OrderedDict
 from dataclasses import replace
 from pymonad.either import Either
@@ -28,8 +29,14 @@ def order(selection: Selection, key: Order, reverse: bool = False)->Callable[...
       return lambda: callback
 
 def limit(selection: Selection, size: int)->Callable[...,Selection]:
-      f: Selection = lambda info: selection(info)[0:min(size,info.size())]
-      return lambda: f
+      def callback(info: GroupInfo)->Selection:
+            els = selection(info)
+            if not els:
+                  return []
+            elif len(els) <= size:
+                  return els
+            return els[0:size]
+      return lambda: callback
 
 def roulette(size: int = None)->Callable[...,Selection]:
       def callback()->Selection:
@@ -51,42 +58,42 @@ def random(size: int = None)->Callable[..., Selection]:
             return info.pick_random(size=min(size,info.size()) if size else info.size())
       return lambda: callback
 
-def filter(condition: Condition, size: int = None)->Callable[..., Selection]:
+def filter(condition: Condition)->Callable[..., Selection]:
       def callback()->Selection:
             param = "When condition"
-            f: Selection = lambda info: info.filter(size if size else info.size(), condition)
+            f: Selection = lambda info: info.filter(condition)
             assert_not_null(condition, param)
             assert_callable(condition, param)
             return f
       return callback
 
-def do_aggregate(
-      selection: Callable[..., Selection], 
-      key: Union[Order, str])->Callable[..., Selection]:
-      select_param = "Selection method"
-      aggr_param = "Aggregator method"
-      assert_not_null(selection, select_param)
-      assert_not_null(key, aggr_param)
-      assert_callable(selection, select_param)
-      method = key if callable(key) else lambda agent: getattr(agent, key)
-      def callback(info: GroupInfo):
-            agents = selection(info)
-            if len(agents) > 0:
-                  return method(agents)
-            return []
-      return lambda: callback
+# def do_aggregate(
+#       selection: Callable[..., Selection], 
+#       key: Union[Order, str])->Callable[..., Selection]:
+#       select_param = "Selection method"
+#       aggr_param = "Aggregator method"
+#       assert_not_null(selection, select_param)
+#       assert_not_null(key, aggr_param)
+#       assert_callable(selection, select_param)
+#       method = key if callable(key) else lambda agent: getattr(agent, key)
+#       def callback(info: GroupInfo):
+#             agents = selection(info)
+#             if len(agents) > 0:
+#                   return method(agents)
+#             return []
+#       return lambda: callback
 
-def max(selection: Callable[..., Selection], key: Union[Order, str] = "fit")->Callable[..., Selection]:
-      return do_aggregate(
-            selection, 
-            lambda agents: max(agents, key=key)
-      )
+# def max(selection: Callable[..., Selection], key: Union[Order, str] = "fit")->Callable[..., Selection]:
+#       return do_aggregate(
+#             selection, 
+#             lambda agents: max(agents, key=key)
+#       )
 
-def min(selection: Callable[..., Selection], key: Union[Order, str] = "fit")->Callable[..., Selection]:
-      return do_aggregate(
-            selection, 
-            lambda agents: min(agents, key=key)
-      )
+# def min(selection: Callable[..., Selection], key: Union[Order, str] = "fit")->Callable[..., Selection]:
+#       return do_aggregate(
+#             selection, 
+#             lambda agents: min(agents, key=key)
+#       )
 
 PosHelperResult = IReference | IReferences | Pos
 PosHelper = Callable[[UpdateContext], PosHelperResult] 

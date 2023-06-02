@@ -1,8 +1,8 @@
 from lark import v_args
-from typing import Optional, cast, List
+from typing import Optional, cast
 from dataclasses import dataclass
 from collections import OrderedDict
-from swarmist.core.dictionary import Condition, Update
+from swarmist.core.dictionary import Condition
 from swarmist.recombination import RecombinationMethods, RecombinationMethod 
 from swarmist import (
     all,
@@ -11,9 +11,7 @@ from swarmist import (
     limit,
     roulette,
     random,
-    with_probability,
-    select,
-    UpdateBuilder,
+    with_probability
 )
 from .expressions import Expressions
 
@@ -25,21 +23,6 @@ class UpdateTail:
 
 @v_args(inline=True)
 class UpdateExpressions(Expressions):
-
-    def __init__(self):
-        self._pipeline: List[Update] = []
-
-    def get_pipeline(self):
-        return self._pipeline
-
-    def update(self, selection: UpdateBuilder, update_tail: UpdateTail):
-        self._pipeline.append(
-            select(selection)
-                .update(**update_tail.update_pos)
-                .recombinant(update_tail.recombination)
-                .where(update_tail.when)
-                .get()
-        )
 
     def replace_all_pos(self, update_pos, when=None):
         return UpdateTail(
@@ -63,9 +46,9 @@ class UpdateExpressions(Expressions):
 
     def _append_order_by_and_size(self, selection, order_by, size):
         if order_by:
-            selection = order_by(selection)
+            selection = order_by(selection())
         if size:
-            selection = limit(selection)
+            selection = limit(selection(), size)
         return selection
 
     def roulette_selection(self, size=None):
@@ -86,20 +69,21 @@ class UpdateExpressions(Expressions):
     def reverse_order(self):
         return True
 
-    def binomial_recombination(self, p: float):
-        return RecombinationMethods().binomial(p)
+    def binomial_recombination(self, probability):
+        return RecombinationMethods().binomial(probability())
 
-    def exponential_recombination(self, p: float):
-        return RecombinationMethods().exponential(p)
+    def exponential_recombination(self, probability):
+        return RecombinationMethods().exponential(probability())
 
-    def with_probability_recombination(self, p: float):
-        return RecombinationMethods().k_with_probability(p)
+    def with_probability_recombination(self, probability):
+        return RecombinationMethods().k_with_probability(probability())
 
     def random_recombination(self, size: int):
         return RecombinationMethods().k_random(size)
 
     def init_random_recombination(self):
         return RecombinationMethods().get_new()
+    
 
     def update_pos(self, *args):
         return OrderedDict({arg[0]: arg[1] for arg in args})

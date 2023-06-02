@@ -5,7 +5,9 @@ from dataclasses import fields, dataclass
 from functools import reduce
 from swarmist.core.references import Reference
 from swarmist.core.dictionary import Agent
-#import numpy as np
+import numpy as np
+
+print(np.equal(False, True))
 
 #agent_fields = {field.name: field.type for field in fields(Agent)}
 #print(agent_fields)
@@ -54,23 +56,23 @@ from swarmist.core.dictionary import Agent
 
 # test(a=1, b=2, c=3)
 
-@dataclass(frozen=True)
-class SAgent(Agent):
-    def __getitem__(self, item):
-        return getattr(self, item)
+# @dataclass(frozen=True)
+# class SAgent(Agent):
+#     def __getitem__(self, item):
+#         return getattr(self, item)
     
-agent = SAgent(
-    pos=[1,2,3],
-    fit=1,
-    best=[1,2,3],
-    trials=0,
-    index= 0, 
-    ndims=3, 
-    delta=[0,0,0],
-    improved= False
-)
+# agent = SAgent(
+#     pos=[1,2,3],
+#     fit=1,
+#     best=[1,2,3],
+#     trials=0,
+#     index= 0, 
+#     ndims=3, 
+#     delta=[0,0,0],
+#     improved= False
+# )
 
-reference = Reference(agent)
+# reference = Reference(agent)
 
-print(agent["pos"])
-print(reference.get("pos"))
+# print(agent["pos"])
+# print(reference.get("pos"))

@@ -67,10 +67,9 @@ class RandomExpressions(Expressions):
     ) -> Callable[[Optional[Any]], Union[Pos, float]]:
         size = props.pop("size") if "size" in props else None
         return lambda ctx=None: callback(
-            Random(
-                fetch_dimensions(size, ctx)), 
-                self._exec_props(props, ctx)
-            )
+            Random(fetch_dimensions(size, ctx)), 
+            self._exec_props(props, ctx)
+        )
     
     def _exec_props(self, props: Dict[str, Any] = {}, ctx=None):
         return {

@@ -59,6 +59,8 @@ class Population:
     def update(self, ctx: SearchContext):
         for update in self._pipeline:
             to_update = update.selection(self._ranking.info)
+            if not to_update:
+                continue
             for agent in to_update:
                 new_agent = self._get_updated_agent(agent, update, ctx)
                 self._agents[new_agent.index] = new_agent
