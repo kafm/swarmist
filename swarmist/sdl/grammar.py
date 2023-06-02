@@ -7,11 +7,19 @@
 # "var"i key size_expr? bounds_expr  -> set_var
 grammar = """
     ?start: "search"i "(" space_expr ")" "using"i "(" strategy_expr ")" "until"i "(" termination_expr ")" -> search
-    ?space_expr: variables objective_function_expr -> space
+    ?space_expr: variables objective_function_expr constraints_expr? -> space
     ?objective_function_expr: "minimize"i math_expr -> minimize
         | "maximize"i math_expr -> maximize
     ?variables: variable+ -> set_vars
     ?variable: "var"i key size_expr? bounds_expr  -> var
+    ?constraints_expr: "subject"i "to"i "(" constraint+ ")" ("with"i "coefficient"i float)?   -> build_constraints
+    ?constraints:  constraint+  -> set_constraints
+    ?constraint: math_expr "<" math_expr -> lt_constraint
+        | math_expr "<=" math_expr -> le_constraint
+        | math_expr ">" math_expr -> gt_constraint
+        | math_expr ">=" math_expr -> ge_constraint
+        | math_expr "=" math_expr -> eq_constraint
+        | math_expr "!=" math_expr -> ne_constraint
     ?strategy_expr: parameters_expr? init_population_expr update_expr+ -> build_strategy
     ?parameters_expr: "parameters"i "(" parameter+ ")"
     ?parameter: key "=" math_expr bounds_expr? -> set_parameter

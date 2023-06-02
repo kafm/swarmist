@@ -12,9 +12,6 @@ KeyValue = Dict[K, V]
 Pos = List[float]
 Fit = float
 Number = float | int
-FitnessFunction = Callable[[Pos], float]
-ConstraintChecker = Callable[[Pos], Pos]
-ConstraintsChecker = List[ConstraintChecker]
 
 
 @dataclass(frozen=True)
@@ -51,6 +48,12 @@ class SearchContext:
     min_fit: Fit
     curr_eval: int
     max_evals: int
+
+
+FitnessFunction = Callable[[Pos], Fit]
+ConstraintChecker = Callable[[Pos], Fit]
+ConstraintValue = ConstraintChecker | Fit
+ConstraintsChecker = List[ConstraintChecker]
 
 
 @dataclass(frozen=True)
@@ -287,9 +290,7 @@ class Parameters:
         max: Optional[float] = None,
     ):
         self._parameters[name] = Parameter(
-            name, 
-            value if callable(value) else lambda _: value, 
-            min, max 
+            name, value if callable(value) else lambda _: value, min, max
         )
 
     def get(self, name: str, ctx: SearchContext) -> float:
@@ -298,6 +299,7 @@ class Parameters:
 
     def __repr__(self):
         return f"Parameters({self._parameters})"
+
 
 @dataclass(frozen=True)
 class ISwarmContext(AbstractInfo[IReferences, IReference]):

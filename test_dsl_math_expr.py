@@ -34,8 +34,13 @@ st.pipeline(
 
 expression = """
 SEARCH(
-    VAR X SIZE(20) BOUNDED BY (-5.12, 5.12) 
-    MINIMIZE SUM(X**2)
+    VAR X SIZE(10) BOUNDED BY (-5.12, 5.12) 
+    VAR Y SIZE(10) BOUNDED BY (-5.12, 5.12) 
+    MINIMIZE SUM(X**2) + SUM(Y**2)
+    SUBJECT TO (
+        SUM(X)=SUM(Y)
+        SUM(X) < SUM(Y-1)
+    ) WITH COEFFICIENT .7
 )
 USING (
     PARAMETERS (

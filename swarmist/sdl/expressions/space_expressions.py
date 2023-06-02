@@ -2,9 +2,9 @@ from lark import v_args
 from typing import Optional, Callable, Dict, Any
 from dataclasses import dataclass, replace
 import numpy as np
-from .expressions import Expressions
+from .expressions import Expressions, fetch_value
 from swarmist.core.dictionary import Bounds, Pos
-from swarmist.space import SpaceBuilder
+from swarmist.space import SpaceBuilder, lt_constraint, le_constraint, gt_constraint, ge_constraint, eq_constraint, ne_constraint
 
 
 @dataclass(frozen=True)
@@ -38,14 +38,39 @@ class SpaceExpressions(Expressions):
                 if var.size == 1
                 else pos[var.begin_index : var.begin_index + var.size]
             )
-        #TODO co§nstraints
+        #TODO constraints
         return SpaceAssets(
             space=SpaceBuilder(
                 objective_function[0], bounds=variables.bounds, dimensions=variables.ndims, 
                 minimize=objective_function[1]
-            ),
+            ).constrained_by(*constraints),
             get_var=get_var,
         )
+    
+    def build_constraints(self, constraints, coefficient=None):
+        print(list(constraints), coefficient)
+        return None
+    
+    def set_constraints(self, *constraints):
+        return list(constraints)
+    
+    def lt_constraint(self, left, right):
+        return lt_constraint(left, right)
+
+    def le_constraint(self, left, right):
+        return le_constraint(left, right)
+
+    def gt_constraint(self, left, right):
+        return gt_constraint(left, right)
+
+    def ge_constraint(self, left, right):
+        return ge_constraint(left, right)
+
+    def eq_constraint(self, left, right):
+        return eq_constraint(left, right)
+
+    def ne_constraint(self, left, right):
+        return ne_constraint(left, right)
 
     def minimize(self, expr):
         return (self.get_fit_function(expr), False)
@@ -55,6 +80,8 @@ class SpaceExpressions(Expressions):
     
     def get_fit_function(self, expr):
         return lambda pos: expr(pos)
+    
+    
 
     def set_vars(self, *args: Variable):
         variables = {}
