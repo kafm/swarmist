@@ -106,6 +106,18 @@ class MathExpressions(Expressions):
                 return val
 
         return callback
+    
+    def count(self, x):
+        def callback(ctx=None):
+            val = fetch_value(x, ctx)
+            if hasattr(val, "size"):
+                return val.size()
+            elif hasattr(val, "__len__"):
+                return len(val)
+            else:
+                return val
+
+        return callback
 
     def min(self, x):
         def callback(ctx=None):

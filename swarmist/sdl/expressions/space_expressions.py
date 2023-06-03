@@ -30,7 +30,7 @@ class SpaceAssets:
 
 @v_args(inline=True)
 class SpaceExpressions(Expressions):
-    def space(self, variables: Variables, objective_function, constraints=(None,None)):
+    def space(self, variables: Variables, objective_function, constraints=(None, None)):
         def get_var(pos, name):
             var: Variable = variables.kv[name]
             return (
@@ -38,16 +38,18 @@ class SpaceExpressions(Expressions):
                 if var.size == 1
                 else pos[var.begin_index : var.begin_index + var.size]
             )
-        return SpaceAssets(
-            space=SpaceBuilder(
-                objective_function[0],
-                bounds=variables.bounds,
-                dimensions=variables.ndims,
-                minimize=objective_function[1],
-                penalty_coefficient=constraints[1],
-            ).constrained_by(*constraints[0]),
-            get_var=get_var,
+
+        cs, coefficient = constraints
+        space = SpaceBuilder(
+            objective_function[0],
+            bounds=variables.bounds,
+            dimensions=variables.ndims,
+            minimize=objective_function[1],
+            penalty_coefficient=coefficient,
         )
+        if cs:
+            space = space.constrained_by(*cs)
+        return SpaceAssets(space=space, get_var=get_var)
 
     def build_constraints(self, constraints, coefficient=None):
         return (constraints, coefficient)

@@ -1,4 +1,3 @@
-from swarmist.sdl.parser import Parser
 import swarmist as sw
 
 # problem, bounds = sw.benchmark.sphere()
@@ -28,12 +27,8 @@ import swarmist as sw
 
 expression = """
 SEARCH(
-    VAR X SIZE(10) BOUNDED BY (-5.12, 5.12) 
-    VAR Y SIZE(10) BOUNDED BY (-5.12, 5.12) 
-    MINIMIZE SUM(X**2) + SUM(Y**2)
-    SUBJECT TO (
-        X=Y
-    ) WITH COEFFICIENT .7
+    VAR X SIZE(20) BOUNDED BY (-5.12, 5.12) 
+    MINIMIZE SUM(X**2)
 )
 USING (
     PARAMETERS (
@@ -44,11 +39,12 @@ USING (
     POPULATION SIZE(40) INIT RANDOM_UNIFORM()
     SELECT ALL (
         UPDATE (
-            VELOCITY= PARAM(CHI) * (
-                DELTA 
-                + PARAM(C1) * RANDOM() * (BEST-POS)
-                + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
-            )
+            NEIGHBORS = NEIGHBORHOOD()
+            PHI = PARAM(C1) + PARAM(C2)
+            N = COUNT(NEIGHBORS)
+            W = RANDOM(SIZE=N)
+            SCT = RANDOM() * (PHI/N) * W * ( ((NEIGHBORS * W)/W) - POS )
+            VELOCITY = PARAM(CHI) * (DELTA + SCT)
             POS = POS + VELOCITY
         ) 
     )
@@ -57,27 +53,8 @@ UNTIL (
     GENERATION = 1000
 )
 """
-strategy_expr = """
-    PARAMETERS (
-        C1 = 2.05 BOUNDED BY (0, 8)
-        C2 = 2.05 BOUNDED BY (0, 8) 
-        CHI = 0.7298 BOUNDED BY (0, 1)
-    )
-    POPULATION SIZE(40) INIT RANDOM_UNIFORM()
-    SELECT ALL (
-        UPDATE (
-            VELOCITY = PARAM(CHI) * (
-                DELTA 
-                + PARAM(C1) * RANDOM() * (BEST-POS)
-                + PARAM(C2) * RANDOM() * (SWARM_BEST()-POS)
-            )
-            POS = POS + VELOCITY
-        ) 
-    )
-"""
 #.format(bounds=bounds)
-query = Parser().parse(expression) #, start="strategy_expr"
-query()
+results = sw.sdl.execute(expression) #, start="strategy_expr"
 # strategy._pipeline_builders[0].update(
 #         gbest=sw.swarm.best(),
 #         pbest=sw.agent.best(),

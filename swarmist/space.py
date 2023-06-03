@@ -4,8 +4,6 @@ from swarmist.core.dictionary import (
     Bounds,
     ConstraintsChecker,
     ConstraintValue,
-    Pos,
-    Fit,
 )
 from swarmist.core.evaluator import Evaluator
 import numpy as np

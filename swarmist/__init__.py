@@ -7,8 +7,9 @@ from swarmist.update import *
 from swarmist.space import minimize, maximize, le_constraint, ge_constraint, eq_constraint
 from swarmist.search import until, using, search
 from swarmist.utils import benchmark
+from swarmist.sdl import Sdl
 
-
+sdl = Sdl()
 strategy = lambda: Strategy()
 init = InitializationMethods()
 topology = TopologyMethods()

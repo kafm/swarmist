@@ -148,6 +148,7 @@ grammar = """
         | "min"i "(" math_expr ")" -> min
         | "max"i "(" math_expr ")" -> max
         | "avg"i "(" math_expr ")" -> avg
+        | "count"i "(" math_expr ")" -> count
         | "if_then"i "(" condition_expr "," math_expr ","  math_expr ")"    -> if_then
         | references_expr
         | random_expr

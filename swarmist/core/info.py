@@ -89,7 +89,7 @@ class SwarmContext(ISwarmContext):
     info : GroupInfo
 
     @classmethod
-    def of(cls, info: AgentsInfo, picked: List[int])->SwarmContext:
+    def of(cls, info: AgentsInfo, picked: List[int] = [])->SwarmContext:
         return cls(info=info, picked=picked)
 
     def all(self)->References:
