@@ -45,7 +45,7 @@ class SearchExecutor:
     def evaluate(self, pos: Pos)->Evaluation:
         self._assert_max_evals()
         self._assert_min_fit()
-        evaluation = self.evaluator.evaluate(pos)
+        evaluation = self.evaluator.evaluate(pos, self.context())
         self.curr_eval += 1
         self._log_result(evaluation)
         return evaluation 

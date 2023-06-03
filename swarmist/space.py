@@ -1,5 +1,4 @@
 from __future__ import annotations
-from typing import Union
 from swarmist.core.dictionary import (
     FitnessFunction,
     Bounds,
@@ -20,67 +19,16 @@ def maximize(f: FitnessFunction, bounds: Bounds, dimensions: int = 2) -> SpaceBu
     return SpaceBuilder(f, bounds, dimensions, False)
 
 
-def lt_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
-    def callback(pos: Pos) -> Fit:
-        x = get_constraint_value(left, pos)
-        y = get_constraint_value(right, pos)
-        return 0 if x < y else x + y
-
-    return callback
+def ge_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
+    return lambda pos: min(0, np.sum(left(pos) - right(pos) ** 2))
 
 
 def le_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
-    def callback(pos: Pos) -> Fit:
-        x = get_constraint_value(left, pos)
-        y = get_constraint_value(right, pos)
-        return 0 if x <= y else x + y
-
-    return callback
-
-
-def gt_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
-    def callback(pos: Pos) -> Fit:
-        x = get_constraint_value(left, pos)
-        y = get_constraint_value(right, pos)
-        return 0 if x > y else x - y
-
-    return callback
-
-
-def ge_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
-    def callback(pos: Pos) -> Fit:
-        x = get_constraint_value(left, pos)
-        y = get_constraint_value(right, pos)
-        return 0 if x >= y else x - y
-
-    return callback
+    return ge_constraint(right, left)
 
 
 def eq_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
-    def callback(pos: Pos) -> Fit:
-        x = get_constraint_value(left, pos)
-        y = get_constraint_value(right, pos)
-        return 0 if x == y else x
-
-    return callback
-
-
-def ne_constraint(left: ConstraintValue, right: ConstraintValue) -> ConstraintsChecker:
-    def callback(pos: Pos) -> Fit:
-        x = get_constraint_value(left, pos)
-        y = get_constraint_value(right, pos)
-        return 0 if x != y else x
-
-    return callback
-
-
-def get_constraint_value(c: ConstraintValue, pos: Pos) -> Fit:
-    x = c(pos)
-    if isinstance(x, list):
-        raise ValueError(
-            "Expected constraint expression to return scalar value, got list"
-        )
-    return x
+    return lambda pos: max(0, np.sum((left(pos) - right(pos) ** 2)))
 
 
 class SpaceBuilder:

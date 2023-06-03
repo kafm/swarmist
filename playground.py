@@ -10,9 +10,9 @@ import numpy as np
 a = np.array([])
 b = np.array([4, 5])
 print(np.concatenate((a, b)))
-j = a+b
-print(j[-1])
 
+print(np.sum(b))
+print(np.sum(20))
 #agent_fields = {field.name: field.type for field in fields(Agent)}
 #print(agent_fields)
 # arr = np.array([[1,2, 4],[2,3, 6],[4,5, 10]])

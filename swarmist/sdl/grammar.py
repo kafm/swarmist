@@ -1,10 +1,3 @@
-#?var: NAME "=" math_expr    -> assign_var
-#parameters_expr? init_population_expr
-
-#TODO CONSTRAINTS
-# constraints_expr?
-# ?constraints_expr: "subject"i "to"i constraint+
-# "var"i key size_expr? bounds_expr  -> set_var
 grammar = """
     ?start: "search"i "(" space_expr ")" "using"i "(" strategy_expr ")" "until"i "(" termination_expr ")" -> search
     ?space_expr: variables objective_function_expr constraints_expr? -> space
@@ -12,14 +5,11 @@ grammar = """
         | "maximize"i math_expr -> maximize
     ?variables: variable+ -> set_vars
     ?variable: "var"i key size_expr? bounds_expr  -> var
-    ?constraints_expr: "subject"i "to"i "(" constraint+ ")" ("with"i "coefficient"i float)?   -> build_constraints
+    ?constraints_expr: "subject"i "to"i "(" constraints ")" ("with"i "coefficient"i float)?   -> build_constraints
     ?constraints:  constraint+  -> set_constraints
-    ?constraint: math_expr "<" math_expr -> lt_constraint
-        | math_expr "<=" math_expr -> le_constraint
-        | math_expr ">" math_expr -> gt_constraint
+    ?constraint: math_expr "<=" math_expr -> le_constraint
         | math_expr ">=" math_expr -> ge_constraint
         | math_expr "=" math_expr -> eq_constraint
-        | math_expr "!=" math_expr -> ne_constraint
     ?strategy_expr: parameters_expr? init_population_expr update_expr+ -> build_strategy
     ?parameters_expr: "parameters"i "(" parameter+ ")"
     ?parameter: key "=" math_expr bounds_expr? -> set_parameter
@@ -44,8 +34,9 @@ grammar = """
     ?update_expr: selection_expr "(" update_method ")" -> update
     ?update_method: recombination_expr "update"i "(" update_vars ")" ("when"i where)? -> recombine_pos
         | "update"i "(" update_vars ")" ("when"i where)? -> replace_all_pos
-    ?update_vars:  update_var+ -> update_pos
-    ?update_var: key "=" math_expr -> set_update_var
+    ?update_vars: update_var+   -> update_pos
+    ?update_var: "pos"i "=" math_expr -> set_pos_var
+        | key "=" math_expr -> set_update_var
     ?selection_expr: "select"i selection_size order_by? -> all_selection
         | "select"i selection_size "where"i where order_by? -> filter_selection
         | "with"i "roulette"i "select"i selection_size -> roulette_selection

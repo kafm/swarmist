@@ -88,7 +88,8 @@ class UpdateExpressions(Expressions):
     def update_pos(self, *args):
         return OrderedDict({arg[0]: arg[1] for arg in args})
 
+    def set_pos_var(self, value):
+        return ("pos", value)
+
     def set_update_var(self, key, value):
-        if cast(str, key).lower() == "pos":
-            return ("pos", value)
         return (key, value)
