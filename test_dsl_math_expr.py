@@ -31,28 +31,19 @@ SEARCH(
     MINIMIZE SUM(X**2)
 )
 USING (
-    PARAMETERS (
-        C1 = 2.05 BOUNDED BY (0, 8)
-        C2 = 2.05 BOUNDED BY (0, 8) 
-        CHI = 0.7298 BOUNDED BY (0, 1)
-    )
     POPULATION SIZE(40) INIT RANDOM_UNIFORM()
     SELECT ALL (
         UPDATE (
-            NEIGHBORS = NEIGHBORHOOD()
-            PHI = PARAM(C1) + PARAM(C2)
-            N = COUNT(NEIGHBORS)
-            W = RANDOM(SIZE=N)
-            SCT = RANDOM() * (PHI/N) * W * ( ((NEIGHBORS * W)/W) - POS )
-            VELOCITY = PARAM(CHI) * (DELTA + SCT)
-            POS = POS + VELOCITY
-        ) 
+            ABS_POS = ABS(POS)
+            POS = POS + RANDOM() * (SWARM_BEST() - ABS_POS) - RANDOM() * (SWARM_WORST() - ABS_POS)
+        ) WHEN IMPROVED = TRUE
     )
 )
 UNTIL (
     GENERATION = 1000
 )
 """
+#SCT = RANDOM() * (PHI/N) * W * AVG(MAP(NEIGHBORS, (REF) => REF - POS), W)
 #.format(bounds=bounds)
 results = sw.sdl.execute(expression) #, start="strategy_expr"
 # strategy._pipeline_builders[0].update(

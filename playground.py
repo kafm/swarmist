@@ -7,12 +7,21 @@ from swarmist.core.references import Reference
 from swarmist.core.dictionary import Agent
 import numpy as np
 
-a = np.array([])
-b = np.array([4, 5])
-print(np.concatenate((a, b)))
 
-print(np.sum(b))
-print(np.sum(20))
+a = np.array([[1,2,3], [2,2,2]])
+weights = np.array([.5,.7, 1])
+print(
+    np.average(a, axis=0),
+)
+
+#print(np.average(a, axis=0, weights=[.5,.7]))
+
+# a = np.array([])
+# b = np.array([4, 5])
+# print(np.concatenate((a, b)))
+
+# print(np.sum(b))
+# print(np.sum(20))
 #agent_fields = {field.name: field.type for field in fields(Agent)}
 #print(agent_fields)
 # arr = np.array([[1,2, 4],[2,3, 6],[4,5, 10]])

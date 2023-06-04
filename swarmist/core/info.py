@@ -157,7 +157,7 @@ class SwarmContext(ISwarmContext):
     
     def _append_picked(self, ref: Union[Reference, References]):
         if isinstance(ref, Reference):
-            self.picked.append(ref.index)
+            self.picked.append(ref.agent.index)
         else: 
             self.picked.extend([r.index for r in ref])
     

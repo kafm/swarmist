@@ -49,6 +49,17 @@ class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressio
             else:
                 return self._get_var(ctx, name)
         return callback
+    
+    #TODO check if is necessary to get an specific index
+    # def get_var_index(self, name, index):
+    #     def callback(ctx=None):
+    #         val = self.get_var(name)(ctx)
+    #         if val is None or not hasattr(val, "__len__"):
+    #             raise ValueError(f"Variable {name} is not iterable")
+    #         if len(val) <= index:
+    #             raise ValueError(f"Index out of bounds for variable {name}")
+    #         return val[index]
+    #     return callback
 
     def get_parameter(self, name):
         return lambda ctx=None: cast(UpdateContext, ctx).param(name)
@@ -77,10 +88,6 @@ class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressio
     
     def neg_bound(self, value):
         return -value
-      
-    def assign_var(self, name, value):
-        self.vars[name] = value
-        return value
 
 
 class Parser:

@@ -12,31 +12,46 @@ class MathExpressions(Expressions):
 
     def and_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) and fetch_value(y, ctx)
-  
-    
+
     def if_then_else(self, x, y, z):
-        return lambda ctx=None: fetch_value(y, ctx) if fetch_value(x, ctx) else fetch_value(z, ctx)
+        return (
+            lambda ctx=None: fetch_value(y, ctx)
+            if fetch_value(x, ctx)
+            else fetch_value(z, ctx)
+        )
 
     def or_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) or fetch_value(y, ctx)
 
     def lt(self, x, y):
-        return lambda ctx=None: np.all(np.less(fetch_value(x, ctx), fetch_value(y, ctx)))
+        return lambda ctx=None: np.all(
+            np.less(fetch_value(x, ctx), fetch_value(y, ctx))
+        )
 
     def le(self, x, y):
-        return lambda ctx=None: np.all(np.less_equal(fetch_value(x, ctx), fetch_value(y, ctx)))
+        return lambda ctx=None: np.all(
+            np.less_equal(fetch_value(x, ctx), fetch_value(y, ctx))
+        )
 
     def gt(self, x, y):
-        return lambda ctx=None: np.all(np.greater(fetch_value(x, ctx), fetch_value(y, ctx)))
+        return lambda ctx=None: np.all(
+            np.greater(fetch_value(x, ctx), fetch_value(y, ctx))
+        )
 
     def ge(self, x, y):
-        return lambda ctx=None: np.all(np.greater_equal(fetch_value(x, ctx), fetch_value(y, ctx)))
+        return lambda ctx=None: np.all(
+            np.greater_equal(fetch_value(x, ctx), fetch_value(y, ctx))
+        )
 
     def eq(self, x, y):
-        return lambda ctx=None: np.all(np.equal(fetch_value(x, ctx), fetch_value(y, ctx)))
+        return lambda ctx=None: np.all(
+            np.equal(fetch_value(x, ctx), fetch_value(y, ctx))
+        )
 
     def ne(self, x, y):
-        return lambda ctx=None: np.all(np.not_equal(fetch_value(x, ctx), fetch_value(y, ctx)))
+        return lambda ctx=None: np.all(
+            np.not_equal(fetch_value(x, ctx), fetch_value(y, ctx))
+        )
 
     def add(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) + fetch_value(y, ctx)
@@ -106,7 +121,7 @@ class MathExpressions(Expressions):
                 return val
 
         return callback
-    
+
     def count(self, x):
         def callback(ctx=None):
             val = fetch_value(x, ctx)
@@ -143,15 +158,41 @@ class MathExpressions(Expressions):
 
         return callback
 
-    def avg(self, x):
+    def avg(self, x, weights=None):
         def callback(ctx=None):
-            val = fetch_value(x, ctx)
-            if hasattr(val, "avg"):
-                return val.avg()
-            elif hasattr(val, "__len__"):
-                return val / len(val)
+            vals = fetch_value(x, ctx)
+            w = None if weights is None else fetch_value(weights, ctx)
+            if hasattr(vals, "avg"):
+                return vals.avg(weights=w)
+            if not hasattr(vals, "__len__"):
+                return vals
+            elif weights is None:
+                return np.average(vals, axis=0)
+            else:                
+                return np.average(
+                    [vals[i] * w[i] for i in range(len(vals))],
+                    axis=0,
+                )
+
+        return callback
+
+    def repeat(self, expr, times_expr):
+        def callback(ctx=None):
+            n = int(times_expr(ctx))
+            return [expr(ctx) for _ in range(n)]
+
+        return callback
+
+    def diff(self, left, right):
+        def callback(ctx=None):
+            x = fetch_value(left, ctx)
+            y = fetch_value(right, ctx)
+            if hasattr(x, "diff"):
+                return x.diff(y)
+            elif hasattr(x, "__len__"):
+                return [xi - y for xi in x]
             else:
-                return val
+                return x - y
 
         return callback
 

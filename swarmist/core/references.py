@@ -66,11 +66,32 @@ class Reference(IReference):
         key: Union[str, Callable[[Reference], Pos]] = "best",
     ) -> Pos:
         return np.mod(self.get(key=key), self._get_val(other))
+    
+    def __add__(self, other: Union[Reference, Pos, int, float]) -> Pos:
+        return self.add(other)
+    
+    def __sub__(self, other: Union[Reference, Pos, int, float]) -> Pos:
+        return self.subtract(other)
+    
+    def __mul__(self, other: Union[Reference, Pos, int, float]) -> Pos:
+        return self.multiply(other)
+    
+    def __truediv__(self, other: Union[Reference, Pos, int, float]) -> Pos:
+        return self.divide(other)
+    
+    def __pow__(self, other: Union[Reference, Pos, int, float]) -> Pos:
+        return self.power(other)
+    
+    def __mod__(self, other: Union[Reference, Pos, int, float]) -> Pos:
+        return self.modulus(other)
 
     def _get_val(self, val: Union[Reference, Pos, int, float]) -> Pos:
-        return val.get() if isinstance(Reference, str) else val
-    
-
+        if isinstance(val, Reference):
+            return val.get()
+        elif isinstance(val, str):
+            return self.get(val)
+        else:
+            return val
 
 
 @dataclass(frozen=True)
@@ -78,8 +99,8 @@ class References(IReferences):
     refs: List[Reference]
 
     @classmethod
-    def of(agents: AgentList) -> References:
-        return References([Reference(agent) for agent in agents])
+    def of(cls, agents: AgentList) -> References:
+        return cls([Reference(agent) for agent in agents])
 
     def get(self, index: int) -> Reference:
         return self.refs[index]
@@ -104,8 +125,14 @@ class References(IReferences):
         weights: List[float] = None,
         key: Union[str, Callable[[Reference], Pos]] = "best",
     ) -> Pos:
-        total = self.sum(key=key)
-        return np.divide(total, self.size() if not weights else weights)
+        key_callback = self._get_key_callback(key)
+        if weights is None:
+            return np.average([key_callback(ref.agent) for ref in self.refs], axis=0)
+        else:
+            return np.average(
+                [key_callback(self.refs[i].agent) * weights[i] for i in range(self.size())],
+                axis=0,
+            )
 
     def min(
         self, key: Union[str, Callable[[Reference], Union[Pos, Fit]]] = "fit"
@@ -123,27 +150,23 @@ class References(IReferences):
         self,
         other: Union[Reference, Pos, int, float],
         key: Union[str, Callable[[Reference], Pos]] = "best",
-        reversed: bool = False,
     ) -> Pos:
         _other = other.get() if isinstance(other, Reference) else other
         key_callback = self._get_key_callback(key)
-        callback = (
-            lambda a: np.subtract(_other, key_callback(_other))
-            if reversed
-            else lambda a: np.subtract(key_callback(a), _other)
-        )
-        return self.reduce(callback, 0)
+        return [key_callback(ref.agent) - _other for ref in self.refs]
 
     def reverse_diff(
         self,
         other: Union[Reference, Pos, int, float],
         key: Union[str, Callable[[Reference], Pos]] = "best",
     ) -> Pos:
-        return self.diff(other, key, reversed=True)
+        _other = other.get() if isinstance(other, Reference) else other
+        key_callback = self._get_key_callback(key)
+        return [_other - key_callback(ref.agent) for ref in self.refs]
 
     def _get_key_callback(
         self, key: Union[str, Callable[[Reference], Pos]]
-    ) -> Callable[[Agent], Union[Pos, Fit]]:
+    ) -> Callable[[Agent | Reference], Union[Pos, Fit]]:
         return lambda a: getattr(a, key) if isinstance(key, str) else key
 
     def size(self) -> int:

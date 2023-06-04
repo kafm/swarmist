@@ -69,7 +69,7 @@ grammar = """
         | "neighborhood"i "(" ")"  -> swarm_neighborhood
         | "pick_random"i "(" reference_unique_prop? integer? reference_replace_prop? ")" -> swarm_pick_random
         | "pick_roulette"i "(" reference_unique_prop? integer? reference_replace_prop? ")"   -> swarm_pick_roulette
-        | "rand_to_best" "(" "with"i "probability"i probability ")" -> swarm_rand_to_best
+        | "rand_to_best"i "(" "with"i "probability"i probability ")" -> swarm_rand_to_best
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
         | "param"i "(" key ")" -> get_parameter
         | agent_prop
@@ -147,7 +147,9 @@ grammar = """
         | "sum"i "(" math_expr ")" -> sum
         | "min"i "(" math_expr ")" -> min
         | "max"i "(" math_expr ")" -> max
-        | "avg"i "(" math_expr ")" -> avg
+        | "avg"i "(" math_expr ("," math_expr)? ")" -> avg
+        | "diff"i "(" math_expr "," math_expr ")" -> diff
+        | "repeat"i "(" math_expr "," math_expr ")" -> repeat
         | "count"i "(" math_expr ")" -> count
         | "if_then"i "(" condition_expr "," math_expr ","  math_expr ")"    -> if_then
         | references_expr
@@ -168,3 +170,9 @@ grammar = """
     %import common.WS
     %ignore WS
 """
+
+#TODO check if map is necessary
+# | key "[" (integer | key) "]" -> get_var_index
+# ?map_expr: "map"i "(" (references_expr | key) "," "(" map_callback_params ")" "=" ">"  math_expr ")" -> map
+#     ?map_callback: "(" map_callback_params ")" "=" ">"  math_expr -> get_parameter
+#     ?map_callback_params:  key ("," key)? -> map_callback_params

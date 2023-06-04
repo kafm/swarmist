@@ -2,14 +2,14 @@ from lark import v_args
 from typing import cast
 from swarmist.core.dictionary import Agent
 from swarmist.core.references import AgentMethods, SwarmMethods
-from .expressions import Expressions
+from .expressions import Expressions, fetch_value
 
 swarm_methods = SwarmMethods()
 agent_methods = AgentMethods()
 
+
 @v_args(inline=True)
 class ReferencesExpressions(Expressions):
-
     def swarm_best(self, size=None):
         return swarm_methods.best(size)
 
@@ -29,10 +29,14 @@ class ReferencesExpressions(Expressions):
         return swarm_methods.pick_roulette(unique=unique, size=size, replace=replace)
 
     def swarm_rand_to_best(self, probability=None):
-        return swarm_methods.rand_to_best(probability=probability)
+        return lambda ctx: swarm_methods.rand_to_best(f=fetch_value(probability, ctx))(
+            ctx
+        )
 
     def swarm_current_to_best(self, probability=None):
-        return swarm_methods.current_to_best(probability=probability)
+        return lambda ctx: swarm_methods.current_to_best(f=fetch_value(probability, ctx))(
+            ctx
+        )
 
     def agent_pos(self):
         return agent_methods.pos()
@@ -57,7 +61,7 @@ class ReferencesExpressions(Expressions):
 
     def agent_improved(self):
         return agent_methods.improved()
-    
+
     def self_agent_pos(self):
         return lambda a: cast(Agent, a).pos
 
@@ -81,4 +85,3 @@ class ReferencesExpressions(Expressions):
 
     def self_agent_improved(self):
         return lambda a: cast(Agent, a).improved
-
