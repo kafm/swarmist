@@ -70,7 +70,7 @@ grammar = """
         | "pick_roulette"i "(" reference_unique_prop? integer? reference_replace_prop? ")"   -> swarm_pick_roulette
         | "rand_to_best"i "(" "with"i "probability"i probability ")" -> swarm_rand_to_best
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
-        | "param"i "(" key ")" -> get_parameter
+        | param
         | agent_prop
     ?agent_prop: sortable_agent_prop
         | "best"i   -> agent_best
@@ -81,7 +81,7 @@ grammar = """
         | "improved"i   -> agent_improved
     ?reference_unique_prop: "unique"i -> true
     ?reference_replace_prop: "with"i "replacement"i -> true
-    ?probability: value -> probability
+    ?probability: (value | param) -> probability
     ?size_expr: "size"i "(" integer ")"
     ?termination_expr: termination_condition+ -> stop_condition
     ?termination_condition: "evaluations"i "=" integer -> set_max_evals
@@ -155,6 +155,7 @@ grammar = """
         | random_expr
         | value -> value_to_lambda
         | bool -> value_to_lambda
+    ?param: "param"i "(" key ")" -> get_parameter
     ?key: NAME -> string
     ?value: float 
         | integer

@@ -31,21 +31,23 @@ SEARCH(
     MINIMIZE SUM(X**2)
 )
 USING (
+    PARAMETERS (
+        F = 0.5 BOUNDED BY (0, 1)
+        CR = 0.6 BOUNDED BY (0, 1)
+    )
     POPULATION SIZE(40) INIT RANDOM_UNIFORM()
     SELECT ALL (
-        USING RANDOM RECOMBINATION SIZE(1)
+        USING BINOMIAL RECOMBINATION WITH PROBABILITY PARAM(CR)
         UPDATE (
-            POS = RANDOM_UNIFORM(LOW=-1, HIGH=1) * (POS - PICK_RANDOM())
+            POS = PICK_RANDOM(UNIQUE) + PARAM(F) * (PICK_RANDOM(UNIQUE) - PICK_RANDOM(UNIQUE)) 
         ) WHEN IMPROVED = TRUE
-    )
-    SELECT SIZE(1) WHERE TRIALS > POPULATION_SIZE*NDIMS ORDER BY TRIALS DESC (
-        INIT RANDOM_UNIFORM()
     )
 )
 UNTIL (
     GENERATION = 1000
 )
 """
+# pos = ctx.agent.pos + (np.random.rand(ndims) * np.subtract(a, b))
 #SCT = RANDOM() * (PHI/N) * W * AVG(MAP(NEIGHBORS, (REF) => REF - POS), W)
 #.format(bounds=bounds)
 results = sw.sdl.execute(expression) #, start="strategy_expr"

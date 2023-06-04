@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, List, Callable, Any, Optional
 from dataclasses import dataclass
 from pymonad.either import Either, Right, Left
-from swarmist.core.dictionary import PosGenerationMethod, TopologyBuilder, ParameterValue, Parameters, SearchStrategy, Update, Initialization
+from swarmist.core.dictionary import PosGenerationMethod, TopologyBuilder, ParameterValue, Parameters, SearchStrategy, SearchContext, Initialization
 from swarmist.initialization import InitializationMethods, TopologyMethods
 from swarmist.update import UpdateBuilder
 
@@ -17,6 +17,9 @@ class Strategy:
     def param(self, name: str, min: float, max: float, value: Optional[ParameterValue]=None)->Strategy:
         self._parameters.add(name, min, max, value)
         return self
+    
+    def get_param(self, name: str, ctx: SearchContext = None)->Optional[ParameterValue]:   
+        return self._parameters.get(name, ctx)
 
     def init(self, initialization: PosGenerationMethod, size: int)->Strategy:
         self._initialization = initialization

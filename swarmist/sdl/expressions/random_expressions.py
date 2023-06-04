@@ -2,7 +2,7 @@ from typing import Tuple, Dict, Any, Union, Callable, Optional
 from lark import v_args
 from swarmist.core.random import Random
 from swarmist.core.dictionary import Pos
-from .expressions import Expressions, fetch_dimensions
+from .expressions import Expressions, fetch_dimensions, fetch_value
 
 
 @v_args(inline=True)
@@ -104,7 +104,10 @@ class RandomExpressions(Expressions):
     def random_size(self, x):
         return ("size", x)
 
-    def probability(self, value):
-        if value < 0 or value > 1:
-            raise ValueError(f"Probability must be between 0 and 1")
-        return lambda ctx=None: value
+    def probability(self, x):
+        def callback(ctx=None):
+            value = fetch_value(x, ctx)
+            if value < 0 or value > 1:
+                raise ValueError(f"Probability must be between 0 and 1")
+            return value
+        return callback
