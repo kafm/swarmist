@@ -2,7 +2,7 @@ from lark import v_args
 from typing import Optional, Callable, Dict, Any
 from dataclasses import dataclass, replace
 import numpy as np
-from .expressions import Expressions, fetch_value
+from .expressions import Expressions
 from swarmist.core.dictionary import Bounds, Pos
 from swarmist.space import SpaceBuilder, le_constraint, ge_constraint, eq_constraint
 

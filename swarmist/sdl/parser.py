@@ -38,12 +38,14 @@ class GrammarTransformer(MathExpressions, RandomExpressions, ReferencesExpressio
                 .where(update_tail.when)
         )
 
-    def get_var(self, name):
+    def get_var(self, name: str):
         def callback(ctx=None):
             if ctx is None: 
                 raise ValueError("Getting var with no context is not allowed")
+            elif name.lower() == "population_size":
+                return self._strategy.population_size()
             elif isinstance(ctx, Agent):
-                return ctx[name]
+                return ctx[name.lower()]
             elif isinstance(ctx, UpdateContext):
                 return cast(UpdateContext, ctx).get(name)
             else:

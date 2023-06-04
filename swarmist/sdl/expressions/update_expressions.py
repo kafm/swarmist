@@ -2,18 +2,11 @@ from lark import v_args
 from typing import Optional, cast
 from dataclasses import dataclass
 from collections import OrderedDict
-from swarmist.core.dictionary import Condition
-from swarmist.recombination import RecombinationMethods, RecombinationMethod 
-from swarmist import (
-    all,
-    filter,
-    order,
-    limit,
-    roulette,
-    random,
-    with_probability
-)
+from swarmist.core.dictionary import Condition, UpdateContext
+from swarmist.recombination import RecombinationMethods, RecombinationMethod
+from swarmist import all, filter, order, limit, roulette, random, with_probability
 from .expressions import Expressions
+
 
 @dataclass(frozen=True)
 class UpdateTail:
@@ -21,25 +14,24 @@ class UpdateTail:
     update_pos: OrderedDict
     when: Optional[Condition]
 
+
 @v_args(inline=True)
 class UpdateExpressions(Expressions):
-
     def replace_all_pos(self, update_pos, when=None):
-        return UpdateTail(
-            RecombinationMethods().replace_all(),
-            update_pos,
-            when=when
-        )
-        
+        return UpdateTail(RecombinationMethods().replace_all(), update_pos, when=when)
+
     def recombine_pos(self, recombination, update_pos, when=None):
-        return UpdateTail(
-            recombination=recombination,
-            update_pos=update_pos,
-            when=when
-        )
+        return UpdateTail(recombination=recombination, update_pos=update_pos, when=when)
 
     def all_selection(self, size=None, order_by=None):
         return self._append_order_by_and_size(all(), order_by, size)
+
+    def reset_pos(self, pos_generator):
+        return UpdateTail(
+            RecombinationMethods().replace_all(),
+            OrderedDict({"pos": pos_generator}),
+            when=None,
+        )
 
     def filter_selection(self, size=None, where=None, order_by=None):
         return self._append_order_by_and_size(filter(where), order_by, size)
@@ -78,12 +70,8 @@ class UpdateExpressions(Expressions):
     def with_probability_recombination(self, probability):
         return RecombinationMethods().k_with_probability(probability())
 
-    def random_recombination(self, size: int):
+    def random_recombination(self, size):
         return RecombinationMethods().k_random(size)
-
-    def init_random_recombination(self):
-        return RecombinationMethods().get_new()
-    
 
     def update_pos(self, *args):
         return OrderedDict({arg[0]: arg[1] for arg in args})

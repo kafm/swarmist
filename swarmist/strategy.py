@@ -30,6 +30,10 @@ class Strategy:
     def pipeline(self, *updates: UpdateBuilder)->Strategy:
         self._pipeline_builders = list(updates)
         return self
+    
+    def population_size(self)->int:
+        return self._population_size
+
 
     def get(self)->Either[Exception, SearchStrategy]:
         try:

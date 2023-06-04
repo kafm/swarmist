@@ -1,6 +1,6 @@
 from lark import v_args, Transformer
 from typing import cast
-from swarmist.core.dictionary import UpdateContext, SearchContext
+from swarmist.core.dictionary import UpdateContext, SearchContext, IReference, Agent
 
 @v_args(inline=True)
 class Expressions(Transformer):
@@ -38,5 +38,10 @@ def fetch_dimensions(x, ctx=None):
 
 def fetch_value(x, ctx=None):
     if callable(x):
-        return x(ctx)
+        val = x(ctx)
+        if isinstance(val, Agent):
+            return val.best
+        if isinstance(val, IReference):
+            return cast(IReference, val).get()
+        return val
     return x

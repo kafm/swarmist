@@ -32,8 +32,9 @@ grammar = """
     ?bound: value -> bound 
         | "-" value -> neg_bound
     ?update_expr: selection_expr "(" update_method ")" -> update
-    ?update_method: recombination_expr "update"i "(" update_vars ")" ("when"i where)? -> recombine_pos
+    ?update_method: "using"i recombination_method "update"i "(" update_vars ")" ("when"i where)? -> recombine_pos
         | "update"i "(" update_vars ")" ("when"i where)? -> replace_all_pos
+        | "init"i init_pos_expr -> reset_pos
     ?update_vars: update_var+   -> update_pos
     ?update_var: "pos"i "=" math_expr -> set_pos_var
         | key "=" math_expr -> set_update_var
@@ -57,8 +58,6 @@ grammar = """
     ?order_by: "order"i "by"i sortable_agent_prop asc_desc? -> order_by
     ?asc_desc: "asc"i
         | "desc"i  -> reverse_order 
-    ?recombination_expr: "using"i recombination_method
-        | "reset"i "agent"i -> init_random_recombination
     ?recombination_method: "binomial"i "recombination"i "with"i "probability"i probability  -> binomial_recombination
         | "exponential"i "recombination"i "with"i "probability"i probability    -> exponential_recombination
         | "recombination"i "with"i "probability"i probability   -> with_probability_recombination
