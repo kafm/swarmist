@@ -197,17 +197,17 @@ class MathExpressions(Expressions):
 
         return callback
 
-    def reduce(self, acc, x, initial=None):
-        def callback(ctx=None):
-            val = fetch_value(x, ctx)
-            if hasattr(val, "reduce"):
-                return val.reduce(acc, initial)
-            elif hasattr(val, "__len__"):
-                return ft.reduce(acc, val, initial)
-            else:
-                return val
+    # def reduce(self, acc, x, initial=None):
+    #     def callback(ctx=None):
+    #         val = fetch_value(x, ctx)
+    #         if hasattr(val, "reduce"):
+    #             return val.reduce(acc, initial)
+    #         elif hasattr(val, "__len__"):
+    #             return ft.reduce(acc, val, initial)
+    #         else:
+    #             return val
 
-        return callback
+    #     return callback
 
     def pi(self):
         return lambda _=None: math.pi

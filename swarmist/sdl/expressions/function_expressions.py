@@ -3,7 +3,7 @@ from lark import v_args
 from typing import Optional, cast, List, Dict, Any, Callable, Union
 from dataclasses import dataclass
 from functools import reduce
-from swarmist.core.dictionary import UpdateContext, IReferences, IReference, Agent, Pos
+from swarmist.core.dictionary import UpdateContext, IReferences, IReference, Agent, Pos, AgentList
 from .expressions import Expressions, fetch_value
 
 
@@ -18,11 +18,8 @@ class FunctionExpressions(Expressions):
         def callback(ctx: UpdateContext):
             acc = initial if not callable(initial) else fetch_value(initial, ctx)
             to_reduce = self._get_value_list(values, ctx)
-            #print(f"ACC BEFORE: {acc}")
             for value in to_reduce:
                 acc = body(FunctionContext.of(ctx, {args[0]: acc, args[1]: value}))
-            #print(f"ACC AFTER: {acc}")
-            #print(f"##############################################")
             return acc
 
         return callback
@@ -49,15 +46,17 @@ class FunctionExpressions(Expressions):
         return FunctionDef(body, args)
 
     def _get_value_list(self, values, ctx: UpdateContext):
-        _values = fetch_value(values, ctx)
-        if _values is None:
+        _values = values(ctx)
+        if _values is None :
             return []
-        elif isinstance(_values, IReferences):
+        if isinstance(_values, IReferences):
             return cast(IReferences, _values).all()
-        elif hasattr(_values, "__len__"):
-            return _values
-        else:
+        elif isinstance(_values, IReference):
+            return [cast(IReference, _values).agent]
+        elif isinstance(_values, Agent):
             return [_values]
+        else:
+            return _values
 
 
 @dataclass(frozen=True)
@@ -75,22 +74,23 @@ class FunctionContext(UpdateContext):
             vars=ctx.vars,
         )
 
-    def get_arg(self, name: str, prop: str = None):  
+    def get_arg(self, name: str, prop: str = None):
         arg = self.args[name] if name in self.args else None
         if arg is None:
-           return self._assert_and_get_ctx_var(name, prop)
-        if not prop: 
+            return self._assert_and_get_ctx_var(name, prop)
+        if not prop:
             return arg
         if isinstance(arg, IReference):
             return arg.get(prop.lower())
         if isinstance(arg, Agent):
             return arg[prop.lower()]
         raise ValueError(f"Argument {arg} not found in function context")
-        
+
     def _assert_and_get_ctx_var(self, name: str, prop: Optional[str]):
         if not prop:
             return self.get(name)
         raise ValueError(f"Argument {name} not found in function context")
+
 
 @dataclass(frozen=True)
 class FunctionDef:

@@ -7,21 +7,22 @@ SEARCH(
 )
 USING (
     PARAMETERS (
-        A = 2 BOUNDED BY (0, 10)
+        ALPHA = 1 BOUNDED BY (0, 2)
+        DELTA = 0.97 BOUNDED BY (0, 1)
+        BETA = 1 BOUNDED BY (0, 2)
+        GAMMA = 0.01 BOUNDED BY (0, 1)
     )
     POPULATION SIZE(40) INIT RANDOM_UNIFORM()
     SELECT ALL (
         UPDATE (
-            A = PARAM(A) - CURR_GEN * ( PARAM(A) / MAX_GEN )
-            SC = REPEAT(
-                IF_THEN(
-                    RANDOM(SIZE=1) < 0.5, 
-                    SIN( RANDOM_UNIFORM(LOW=0, HIGH=2*PI(), SIZE=1) ),
-                    COS( RANDOM_UNIFORM(LOW=0, HIGH=2*PI(), SIZE=1) )
-                ), 
-                NDIMS) 
-            POS = POS + ( A * SC * ABS( RANDOM() * SWARM_BEST() - POS ) ) 
-        ) WHEN IMPROVED = TRUE
+            ALPHA = ( PARAM(ALPHA) * PARAM(DELTA) ) ** CURR_GEN
+            BETTER_ONES = FILTER(ALL(), (REF) => REF.FIT < FIT)
+            POS = REDUCE(BETTER_ONES, (ACC, REF) => 
+                ACC + (
+                    PARAM(BETA) * EXP( -PARAM(GAMMA) * (REF.POS - POS)**2 )
+                ) * (REF.POS - POS) + ( ALPHA * (RANDOM() - 0.5) )
+            , POS)
+        )
     )
 )
 UNTIL (

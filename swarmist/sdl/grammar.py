@@ -156,7 +156,7 @@ grammar = """
         | "repeat"i "(" math_expr "," math_expr ")" -> repeat
         | func_expr
         | "count"i "(" math_expr ")" -> count
-        | "if_then"i "(" condition_expr "," math_expr ","  math_expr ")"    -> if_then
+        | "if_then"i "(" conditions_expr "," math_expr ","  math_expr ")"    -> if_then
         | references_expr
         | random_expr
         | value -> value_to_lambda

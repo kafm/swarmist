@@ -15,6 +15,7 @@ import numpy as np
 # )
 
 print(np.mod([1,2,3], 2))
+print(np.mod([1,2,3], 2))
 
 #print(np.average(a, axis=0, weights=[.5,.7]))
 
