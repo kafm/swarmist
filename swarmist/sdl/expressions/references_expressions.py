@@ -27,6 +27,9 @@ class ReferencesExpressions(Expressions):
 
     def swarm_pick_roulette(self, unique=None, size=None, replace=None):
         return swarm_methods.pick_roulette(unique=unique, size=size, replace=replace)
+    
+    def swarm_filter(self, where):
+        return swarm_methods.filter(where)
 
     def swarm_rand_to_best(self, probability=None):
         return lambda ctx: swarm_methods.rand_to_best(f=fetch_value(probability, ctx))(

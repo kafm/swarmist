@@ -26,7 +26,7 @@ def fetch_dimensions(x, ctx=None):
     size = fetch_value(x, ctx)
     if not size: 
         if not ctx:
-            return 1
+            return None
         elif isinstance(ctx, UpdateContext):
             return cast(UpdateContext, ctx).agent.ndims
         elif isinstance(ctx, SearchContext):

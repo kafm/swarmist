@@ -11,7 +11,6 @@ class RandomExpressions(Expressions):
         return self._get_generator(
             props, lambda generator, props: generator.rand(**props)
         )
-
     def random_uniform(self, props: Dict[str, Any] = {}):
         return self._get_generator(
             props, lambda generator, props: generator.uniform(**props)
@@ -66,11 +65,22 @@ class RandomExpressions(Expressions):
         self, props: Dict[str, Any], callback: Callable[[Random, Dict[str, Any]], Any]
     ) -> Callable[[Optional[Any]], Union[Pos, float]]:
         size = props.pop("size") if "size" in props else None
-        return lambda ctx=None: callback(
-            Random(fetch_dimensions(size, ctx)), 
-            self._exec_props(props, ctx)
+        return lambda ctx=None: self._exec_generator(props, callback, size, ctx)
+
+    def _exec_generator(
+        self,
+        props: Dict[str, Any],
+        callback: Callable[[Random, Dict[str, Any]], Any],
+        size=None,
+        ctx=None,
+    ):
+        value = callback(
+            Random(fetch_dimensions(size, ctx)), self._exec_props(props, ctx)
         )
-    
+        if len(value) == 1:
+            return value[0]
+        return value
+
     def _exec_props(self, props: Dict[str, Any] = {}, ctx=None):
         return {
             key: value(ctx) if callable(value) else value
@@ -110,4 +120,5 @@ class RandomExpressions(Expressions):
             if value < 0 or value > 1:
                 raise ValueError(f"Probability must be between 0 and 1")
             return value
+
         return callback

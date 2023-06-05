@@ -49,6 +49,9 @@ class SearchContext:
     curr_eval: int
     max_evals: int
 
+    def __getitem__(self, item):
+        return getattr(self, item)
+
 
 FitnessFunction = Callable[[Pos], Fit]
 ConstraintChecker = Callable[[Pos], Fit]
@@ -195,6 +198,9 @@ class IReference:
 class IReferences:
     def get(self, index: int) -> IReference:
         raise NotImplementedError()
+    
+    def all(self) -> List[IReference]:
+        raise NotImplementedError()
 
     def indices(self) -> List[int]:
         raise NotImplementedError()
@@ -328,6 +334,8 @@ class UpdateContext:
         return self.search_context.parameters.get(name, self)
 
     def get(self, name: str) -> Union[Pos, IReference, IReferences]:
+        if name not in self.vars:
+            return self.search_context[name.lower()]
         return self.vars[name]
 
 

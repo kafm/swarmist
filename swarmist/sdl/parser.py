@@ -1,6 +1,7 @@
 from typing import Any, Optional, cast
 from lark import Lark, v_args
 from typing import List, Callable
+import numpy as np
 import swarmist as sw
 from swarmist.update import UpdateBuilder
 from swarmist.core.dictionary import UpdateContext, Selection, Bounds, Agent
@@ -16,6 +17,7 @@ class GrammarTransformer(
     InitExpressions,
     UpdateExpressions,
     SpaceExpressions,
+    FunctionExpressions,
 ):
     def __init__(self):
         self._strategy = sw.strategy()
@@ -43,19 +45,21 @@ class GrammarTransformer(
             .where(update_tail.when)
         )
 
-    def get_var(self, name: str):
+    def get_var(self, name: str, prop: str = None):
         def callback(ctx=None):
             if ctx is None:
                 raise ValueError("Getting var with no context is not allowed")
             elif name.lower() == "population_size":
                 return self._strategy.population_size()
-            elif isinstance(ctx, Agent):
-                return ctx[name.lower()]
+            elif isinstance(ctx, FunctionContext):
+                return ctx.get_arg(name, prop)
             elif isinstance(ctx, UpdateContext):
                 return cast(UpdateContext, ctx).get(name)
+            elif isinstance(ctx, Agent):
+                return ctx[name.lower()]
             else:
                 return self._get_var(ctx, name)
-
+            
         return callback
 
     # TODO check if is necessary to get an specific index
@@ -77,7 +81,7 @@ class GrammarTransformer(
 
         return callback
 
-    def set_parameter(self, name, value, bounds: Bounds):
+    def set_parameter(self, name, value, bounds: Bounds = Bounds(-np.inf, np.inf)):
         self._strategy.param(name, value, bounds.min, bounds.max)
         return None
 

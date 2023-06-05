@@ -104,6 +104,9 @@ class References(IReferences):
 
     def get(self, index: int) -> Reference:
         return self.refs[index]
+    
+    def all(self)-> List[Reference]:
+        return self.refs
 
     def indices(self) -> List[int]:
         return [ref.agent.index for ref in self.refs]

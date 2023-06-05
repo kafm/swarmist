@@ -66,7 +66,7 @@ res_new = search(
         size(populationSize),
         init(lambda ctx: np.random.uniform(low=ctx.bounds.min, high=ctx.bounds.max, size=ctx.ndims)),
         None, #topology(lbest()),
-        *Pso().pipeline()
+        *Fa().pipeline()
         # update(
         #     select(all()),
         #     apply(Pso().update)

@@ -72,6 +72,10 @@ grammar = """
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
         | param
         | agent_prop
+    ?func_expr: "reduce"i "(" math_expr "," reduce_def ("," math_expr)? ")" -> reduce_func
+        | "filter"i "(" math_expr "," filter_def ")" -> filter_func
+    ?reduce_def: "(" key "," key ")" "=>" math_expr -> func_def
+    ?filter_def: "(" key ")" "=>" conditions_expr -> func_def
     ?agent_prop: sortable_agent_prop
         | "best"i   -> agent_best
         | "pos"i    -> agent_pos
@@ -130,7 +134,8 @@ grammar = """
         | math_term "//" atom -> floordiv
     ?atom: "-" atom         -> neg
         | key -> get_var
-        | "pi" "(" ")"               -> pi
+        | key "." key -> get_var
+        | "pi"i "(" ")"               -> pi
         | "(" math_expr ")"
         | "sin"i "(" math_expr ")" -> sin
         | "cos"i "(" math_expr ")" -> cos
@@ -149,6 +154,7 @@ grammar = """
         | "avg"i "(" math_expr ("," math_expr)? ")" -> avg
         | "diff"i "(" math_expr "," math_expr ")" -> diff
         | "repeat"i "(" math_expr "," math_expr ")" -> repeat
+        | func_expr
         | "count"i "(" math_expr ")" -> count
         | "if_then"i "(" condition_expr "," math_expr ","  math_expr ")"    -> if_then
         | references_expr

@@ -13,12 +13,13 @@ class MathExpressions(Expressions):
     def and_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) and fetch_value(y, ctx)
 
-    def if_then_else(self, x, y, z):
-        return (
-            lambda ctx=None: fetch_value(y, ctx)
+    def if_then(self, x, y, z):
+        return lambda ctx=None: (
+            fetch_value(y, ctx)
             if fetch_value(x, ctx)
             else fetch_value(z, ctx)
         )
+
 
     def or_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) or fetch_value(y, ctx)
@@ -54,58 +55,58 @@ class MathExpressions(Expressions):
         )
 
     def add(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) + fetch_value(y, ctx)
+        return lambda ctx=None: np.add(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def sub(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) - fetch_value(y, ctx)
+        return lambda ctx=None: np.subtract(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def mul(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) * fetch_value(y, ctx)
+        return lambda ctx=None: np.multiply(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def div(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) / fetch_value(y, ctx)
+        return lambda ctx=None: np.divide(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def floordiv(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) // fetch_value(y, ctx)
+        return lambda ctx=None: np.floor_divide(fetch_value(x, ctx),fetch_value(y, ctx))
 
     def neg(self, x):
-        return lambda ctx=None: -fetch_value(x, ctx)
+        return lambda ctx=None: np.negative(fetch_value(x, ctx))
 
     def pow(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) ** fetch_value(y, ctx)
+        return lambda ctx=None: np.power(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def mod(self, x, y):
-        return lambda ctx=None: fetch_value(x, ctx) % fetch_value(y, ctx)
+        return lambda ctx=None: np.mod(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def sin(self, x):
-        return lambda ctx=None: math.sin(fetch_value(x, ctx))
+        return lambda ctx=None: np.sin(fetch_value(x, ctx))
 
     def cos(self, x):
-        return lambda ctx=None: math.cos(fetch_value(x, ctx))
+        return lambda ctx=None: np.cos(fetch_value(x, ctx))
 
     def tan(self, x):
-        return lambda ctx=None: math.tan(fetch_value(x, ctx))
+        return lambda ctx=None: np.tan(fetch_value(x, ctx))
 
     def arcsin(self, x):
-        return lambda ctx=None: math.asin(fetch_value(x, ctx))
+        return lambda ctx=None: np.asin(fetch_value(x, ctx))
 
     def arccos(self, x):
-        return lambda ctx=None: math.acos(fetch_value(x, ctx))
+        return lambda ctx=None: np.acos(fetch_value(x, ctx))
 
     def arctan(self, x):
-        return lambda ctx=None: math.atan(fetch_value(x, ctx))
+        return lambda ctx=None: np.atan(fetch_value(x, ctx))
 
     def sqrt(self, x):
-        return lambda ctx=None: math.sqrt(fetch_value(x, ctx))
+        return lambda ctx=None: np.sqrt(fetch_value(x, ctx))
 
     def log(self, x):
-        return lambda ctx=None: math.log(fetch_value(x, ctx))
+        return lambda ctx=None: np.log(fetch_value(x, ctx))
 
     def exp(self, x):
-        return lambda ctx=None: math.exp(fetch_value(x, ctx))
+        return lambda ctx=None: np.exp(fetch_value(x, ctx))
 
     def abs(self, x):
-        return lambda ctx=None: abs(fetch_value(x, ctx))
+        return lambda ctx=None: np.abs(fetch_value(x, ctx))
 
     def norm(self, x):
         return lambda ctx=None: np.linalg.norm(fetch_value(x, ctx))

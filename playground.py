@@ -8,11 +8,13 @@ from swarmist.core.dictionary import Agent
 import numpy as np
 
 
-a = np.array([[1,2,3], [2,2,2]])
-weights = np.array([.5,.7, 1])
-print(
-    np.average(a, axis=0),
-)
+# a = np.array([[1,2,3], [2,2,2]])
+# weights = np.array([.5,.7, 1])
+# print(
+#     np.average(a, axis=0),
+# )
+
+print(np.mod([1,2,3], 2))
 
 #print(np.average(a, axis=0, weights=[.5,.7]))
 
