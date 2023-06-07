@@ -14,12 +14,11 @@ class MathExpressions(Expressions):
         return lambda ctx=None: fetch_value(x, ctx) and fetch_value(y, ctx)
 
     def if_then(self, x, y, z):
-        return lambda ctx=None: (
-            fetch_value(y, ctx)
+        return (
+            lambda ctx=None: fetch_value(y, ctx)
             if fetch_value(x, ctx)
             else fetch_value(z, ctx)
         )
-
 
     def or_(self, x, y):
         return lambda ctx=None: fetch_value(x, ctx) or fetch_value(y, ctx)
@@ -67,7 +66,9 @@ class MathExpressions(Expressions):
         return lambda ctx=None: np.divide(fetch_value(x, ctx), fetch_value(y, ctx))
 
     def floordiv(self, x, y):
-        return lambda ctx=None: np.floor_divide(fetch_value(x, ctx),fetch_value(y, ctx))
+        return lambda ctx=None: np.floor_divide(
+            fetch_value(x, ctx), fetch_value(y, ctx)
+        )
 
     def neg(self, x):
         return lambda ctx=None: np.negative(fetch_value(x, ctx))
@@ -169,7 +170,7 @@ class MathExpressions(Expressions):
                 return vals
             elif weights is None:
                 return np.average(vals, axis=0)
-            else:                
+            else:
                 return np.average(
                     [vals[i] * w[i] for i in range(len(vals))],
                     axis=0,

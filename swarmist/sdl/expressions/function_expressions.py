@@ -4,11 +4,28 @@ from typing import Optional, cast, List, Dict, Any, Callable, Union
 from dataclasses import dataclass
 from functools import reduce
 from swarmist.core.dictionary import UpdateContext, IReferences, IReference, Agent, Pos, AgentList
-from .expressions import Expressions, fetch_value
+from .expressions import Expressions, fetch_value 
+import numpy as np
 
 
 @v_args(inline=True)
 class FunctionExpressions(Expressions):
+
+    def map_func(self, values: Callable, func: FunctionDef):
+        args = func.args
+        body = func.body
+        if len(args) != 1:
+            raise ValueError("Map function must have 1 argument")
+
+        def callback(ctx: UpdateContext):
+            to_map = self._get_value_list(values, ctx)
+            return [
+                body(FunctionContext.of(ctx, {args[0]: value}))
+                for value in to_map
+            ]
+
+        return callback
+
     def reduce_func(self, values: Callable, func: FunctionDef, initial=0):
         args = func.args
         body = func.body
@@ -16,7 +33,7 @@ class FunctionExpressions(Expressions):
             raise ValueError("Reduce function must have 2 arguments")
 
         def callback(ctx: UpdateContext):
-            acc = initial if not callable(initial) else fetch_value(initial, ctx)
+            acc = fetch_value(initial, ctx)
             to_reduce = self._get_value_list(values, ctx)
             for value in to_reduce:
                 acc = body(FunctionContext.of(ctx, {args[0]: acc, args[1]: value}))

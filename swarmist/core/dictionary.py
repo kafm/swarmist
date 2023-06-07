@@ -308,7 +308,7 @@ class Parameters:
 
 
 @dataclass(frozen=True)
-class ISwarmContext(AbstractInfo[IReferences, IReference]):
+class ISwarmContext(AbstractInfo[IReferences, Union[IReference, Agent]]):
     picked: List[int]
 
     def pick_random_unique(

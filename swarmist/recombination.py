@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Callable
 from dataclasses import replace
 import numpy as np
-from swarmist_bck.core.dictionary import Pos, Agent
+from swarmist.core.dictionary import Pos, Agent
 
 RecombinationMethod = Callable[[Agent, Pos], Agent]
 

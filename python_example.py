@@ -1,6 +1,5 @@
 import swarmist as sw
-from swarmist_old.PSO import PSO, SearchResult
-from swarmist_bck.algos.pso import Pso
+
 problem, bounds = sw.benchmark.sphere()
 numDimensions = 20
 maxGenerations = 1000
@@ -17,7 +16,8 @@ st.pipeline(
     .update(
         gbest=sw.swarm.best(),
         pbest=sw.agent.best(),
-        velocity=lambda ctx: ctx.param("chi") * (
+        velocity=lambda ctx: ctx.param("chi")
+        * (
             ctx.agent.delta
             + ctx.param("c1") * ctx.random.rand() * (ctx.get("pbest") - ctx.agent.pos)
             + ctx.param("c2") * ctx.random.rand() * (ctx.get("gbest") - ctx.agent.pos)
@@ -25,27 +25,11 @@ st.pipeline(
         pos=lambda ctx: ctx.agent.pos + ctx.get("velocity"),
     )
     .recombinant(sw.recombination.replace_all()),
-    # sw.select(sw.all()).update(
-    #     pos=sw.init.random(),
-    #     recombination=sw.recombination.get_new()
-    # )
-)
-
-res_old: SearchResult = PSO(
-    fitnessFunction=problem,
-    bounds = bounds,
-    numDimensions = numDimensions,
-    populationSize = populationSize,
-    maxGenerations = maxGenerations,
 )
 
 res = sw.search(
-    sw.minimize(
-        problem, bounds, dimensions=numDimensions
-    ),#.constrained_by(lambda pos: pos),
+    sw.minimize(problem, bounds, dimensions=numDimensions),
     sw.until(max_gen=maxGenerations),
     sw.using(st),
 )
-
-print(f"old={res_old.best.fitness}")
-print(f"new={min(res, key=lambda x: x.fit)}")
+print(f"res={min(res, key=lambda x: x.fit)}")

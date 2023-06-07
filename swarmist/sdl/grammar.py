@@ -72,8 +72,10 @@ grammar = """
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
         | param
         | agent_prop
-    ?func_expr: "reduce"i "(" math_expr "," reduce_def ("," math_expr)? ")" -> reduce_func
+    ?func_expr: "map"i "(" math_expr "," map_def ")" -> map_func
+        | "reduce"i "(" math_expr "," reduce_def ("," math_expr)? ")" -> reduce_func
         | "filter"i "(" math_expr "," filter_def ")" -> filter_func
+    ?map_def: "(" key ")" "=>" math_expr -> func_def
     ?reduce_def: "(" key "," key ")" "=>" math_expr -> func_def
     ?filter_def: "(" key ")" "=>" conditions_expr -> func_def
     ?agent_prop: sortable_agent_prop
@@ -126,17 +128,18 @@ grammar = """
     ?math_expr: math_term
         | math_expr "+" math_term   -> add
         | math_expr "-" math_term   -> sub
-    ?math_term: atom
-        | math_term "*" atom  -> mul
-        | math_term "/" atom  -> div
-        | math_term "%" atom  -> mod
-        | math_term "**" atom -> pow
-        | math_term "//" atom -> floordiv
-    ?atom: "-" atom         -> neg
-        | key -> get_var
+    ?math_term: math_factor
+        | math_term "*" math_factor  -> mul
+        | math_term "/" math_factor  -> div
+        | math_term "//" math_factor -> floordiv
+    ?math_factor: math_factor "^" atom -> pow
+        | math_factor "%" atom  -> mod
+        | "-" atom         -> neg
+        | "(" math_expr ")"
+        |  atom
+    ?atom: key -> get_var
         | key "." key -> get_var
         | "pi"i "(" ")"               -> pi
-        | "(" math_expr ")"
         | "sin"i "(" math_expr ")" -> sin
         | "cos"i "(" math_expr ")" -> cos
         | "tan"i "(" math_expr ")" -> tan
@@ -176,9 +179,3 @@ grammar = """
     %import common.WS
     %ignore WS
 """
-
-#TODO check if map is necessary
-# | key "[" (integer | key) "]" -> get_var_index
-# ?map_expr: "map"i "(" (references_expr | key) "," "(" map_callback_params ")" "=" ">"  math_expr ")" -> map
-#     ?map_callback: "(" map_callback_params ")" "=" ">"  math_expr -> get_parameter
-#     ?map_callback_params:  key ("," key)? -> map_callback_params
