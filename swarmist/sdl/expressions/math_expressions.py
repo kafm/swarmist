@@ -168,14 +168,8 @@ class MathExpressions(Expressions):
                 return vals.avg(weights=w)
             if not hasattr(vals, "__len__"):
                 return vals
-            elif weights is None:
-                return np.average(vals, axis=0)
-            else:
-                return np.average(
-                    [vals[i] * w[i] for i in range(len(vals))],
-                    axis=0,
-                )
-
+            print(vals, w)
+            return np.average(vals,  axis=0, weights=w)
         return callback
 
     def repeat(self, expr, times_expr):

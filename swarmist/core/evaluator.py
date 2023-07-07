@@ -38,4 +38,4 @@ class Evaluator:
         )
 
     def _get_penalty(self, value: Fit, k: int) -> Fit:
-        return self.penalty_coefficient**k * abs(value)**2
+        return ( self.penalty_coefficient*k ) * abs(value)**2

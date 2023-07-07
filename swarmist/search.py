@@ -31,7 +31,8 @@ def do_search(
         parameters=strategy.parameters,
         max_gen=until.max_gen,
         min_fit=until.fit,
-        max_evals=until.max_evals
+        max_evals=until.max_evals,
+        population_size=strategy.initialization.population_size
     )  
     return init_population(
         strategy, executor.context()
@@ -45,7 +46,7 @@ def until(
     def callback(): 
        _fit = None if not fit else float(fit)
        _max_evals = None if not max_evals else int(max_evals)
-       _max_gen = None if  not max_gen else int(max_gen)
+       _max_gen = None if  not max_gen else int(max_gen)     
        assert_at_least_one_nonnull({
            "fitness max/min": _fit, 
            "maximum number of evaluations": _max_evals,

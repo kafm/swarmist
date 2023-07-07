@@ -72,11 +72,11 @@ class AgentsInfo(GroupInfo):
         )
         
     def pick_roulette(self, k: int = None, replace: bool = False, exclude: List[int] = None)->Union[Agent,AgentList]:
-        return (
-            np.random.choice(self.agents, size=k, replace=replace, p=self.probs)
-            if not exclude 
-            else np.random.choice([a for a in self.agents if a.index not in exclude], size=k, replace=replace, p=self.probs)
-        )
+        if not exclude:
+            return np.random.choice(self.agents, size=k, replace=replace, p=self.probs)
+        agents = [a for a in self.agents if a.index not in exclude]
+        probs = fit_to_prob(get_fits(agents))
+        return np.random.choice(agents, size=k, replace=replace, p=probs)
     
     def min(self, key: Union[str, Callable[[Agent], Any]] = "fit")->Agent:
         return min(self.agents, key=key if callable(key) else lambda a: getattr(a, key))
@@ -158,6 +158,8 @@ class SwarmContext(ISwarmContext):
     def _append_picked(self, ref: Union[Reference, References]):
         if isinstance(ref, Reference):
             self.picked.append(ref.agent.index)
+        elif isinstance(ref, References):
+            self.picked.extend([r.agent.index for r in ref.all()])
         else: 
             self.picked.extend([r.index for r in ref])
     

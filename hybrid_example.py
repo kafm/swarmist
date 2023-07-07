@@ -1,12 +1,10 @@
 import swarmist as sw
 
+problem, bounds = sw.benchmark.sphere()
+numDimensions = 20
+maxGenerations = 1000
 
-expression = """
-SEARCH(
-    VAR X SIZE(20) BOUNDED BY (-5.12, 5.12) 
-    MINIMIZE SUM(X **  2)
-)
-USING (
+strategy_expr = """
     PARAMETERS (
         ALPHA = 1 BOUNDED BY (0, 2)
         DELTA = 0.97 BOUNDED BY (0, 1)
@@ -28,10 +26,14 @@ USING (
             )
         )
     )
-)
-UNTIL (
-    GENERATION = 1000
-)
 """
 
-results = sw.sdl.execute(expression) 
+
+st = sw.sdl.strategy(strategy_expr) 
+
+res = sw.search(
+    sw.minimize(problem, bounds, dimensions=numDimensions),
+    sw.until(max_gen=maxGenerations),
+    sw.using(st),
+)
+print(f"res={min(res, key=lambda x: x.fit)}")

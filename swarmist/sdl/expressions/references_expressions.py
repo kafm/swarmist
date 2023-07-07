@@ -22,11 +22,34 @@ class ReferencesExpressions(Expressions):
     def swarm_neighborhood(self):
         return swarm_methods.neighborhood()
 
-    def swarm_pick_random(self, unique=None, size=None, replace=None):
-        return swarm_methods.pick_random(unique=unique, size=size, replace=replace)
+    def swarm_pick_random(self, pick_args):
+        return swarm_methods.pick_random(
+            unique=pick_args["unique"],
+            size=pick_args["size"],
+            replace=pick_args["replace"],
+        )
 
-    def swarm_pick_roulette(self, unique=None, size=None, replace=None):
-        return swarm_methods.pick_roulette(unique=unique, size=size, replace=replace)
+    def swarm_pick_roulette(self, pick_args):
+        return swarm_methods.pick_roulette(
+            unique=pick_args["unique"],
+            size=pick_args["size"],
+            replace=pick_args["replace"],
+        )
+
+    def swarm_pick_args(self, *args):
+        props = {"size": None, "replace": None, "unique": None}
+        for arg in args:
+            props[arg[0]] = arg[1]
+        return props
+
+    def swarm_pick_unique_prop(self):
+        return ("unique", True)
+
+    def swarm_pick_size_prop(self, size):
+        return ("size", size)
+
+    def swarm_pick_replacement_prop(self):
+        return ("replace", True)
 
     def swarm_rand_to_best(self, probability=None):
         return lambda ctx: swarm_methods.rand_to_best(f=fetch_value(probability, ctx))(

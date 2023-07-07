@@ -66,12 +66,16 @@ grammar = """
         | "swarm_worst"i "(" integer? ")"   -> swarm_worst
         | "all"i "(" ")"  -> swarm_all
         | "neighborhood"i "(" ")"  -> swarm_neighborhood
-        | "pick_random"i "(" reference_unique_prop? integer? reference_replace_prop? ")" -> swarm_pick_random
-        | "pick_roulette"i "(" reference_unique_prop? integer? reference_replace_prop? ")"   -> swarm_pick_roulette
+        | "pick_random"i "(" pick_args ")" -> swarm_pick_random
+        | "pick_roulette"i "(" pick_args ")"   -> swarm_pick_roulette
         | "rand_to_best"i "(" "with"i "probability"i probability ")" -> swarm_rand_to_best
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
         | param
         | agent_prop
+    ?pick_args: pick_unique_prop? pick_size_prop? pick_replace_prop? -> swarm_pick_args
+    ?pick_unique_prop: "unique"i -> swarm_pick_unique_prop
+    ?pick_size_prop: integer -> swarm_pick_size_prop
+    ?pick_replace_prop: "with"i "replacement"i -> swarm_pick_replacement_prop
     ?func_expr: "map"i "(" math_expr "," map_def ")" -> map_func
         | "reduce"i "(" math_expr "," reduce_def ("," math_expr)? ")" -> reduce_func
         | "filter"i "(" math_expr "," filter_def ")" -> filter_func
@@ -85,8 +89,6 @@ grammar = """
     ?sortable_agent_prop: "trials"i -> agent_trials
         | "fit"i    -> agent_fit
         | "improved"i   -> agent_improved
-    ?reference_unique_prop: "unique"i -> true
-    ?reference_replace_prop: "with"i "replacement"i -> true
     ?probability: (value | param) -> probability
     ?size_expr: "size"i "(" integer ")"
     ?termination_expr: termination_condition+ -> stop_condition
@@ -132,7 +134,7 @@ grammar = """
         | math_term "*" math_factor  -> mul
         | math_term "/" math_factor  -> div
         | math_term "//" math_factor -> floordiv
-    ?math_factor: math_factor "^" atom -> pow
+    ?math_factor: math_factor "**" atom -> pow
         | math_factor "%" atom  -> mod
         | "-" atom         -> neg
         | "(" math_expr ")"

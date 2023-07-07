@@ -109,7 +109,7 @@ class InitializationMethods:
 
         return callback
 
-    def weibull(self, shape: float = 1.0, scale: float = 1.0) -> PosGenerationMethod:
+    def weibull(self, shape: float = 1.0) -> PosGenerationMethod:
         def callback(_ctx: Union(SearchContext, UpdateContext)) -> PosGenerationMethod:
             ctx = (
                 _ctx
@@ -118,7 +118,7 @@ class InitializationMethods:
             )
             return BondedRandom(
                 lbound=ctx.bounds.min, ubound=ctx.bounds.max, size=ctx.ndims
-            ).weibull(shape=shape, scale=scale)
+            ).weibull(shape=shape)
 
         return callback
 

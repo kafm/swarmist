@@ -302,6 +302,9 @@ class Parameters:
     def get(self, name: str, ctx: SearchContext) -> float:
         param = self._parameters[name]
         return np.clip(param.value(ctx), param.min, param.max)
+    
+    def param(self, name: str)->Parameter:
+        return self._parameters[name]
 
     def __repr__(self):
         return f"Parameters({self._parameters})"

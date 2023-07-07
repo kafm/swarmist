@@ -1,4 +1,4 @@
-from swarmist.core.dictionary import Bounds, FitnessFunction, Agent, AgentList, IReferences, IReference, Pos, UpdateContext
+from swarmist.core.dictionary import Bounds, FitnessFunction, Agent, AgentList, IReferences, IReference, Pos, UpdateContext, SearchResults
 from swarmist.core.references import SwarmMethods, AgentMethods
 from swarmist.strategy import Strategy
 from swarmist.initialization import  InitializationMethods, TopologyMethods

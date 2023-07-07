@@ -20,6 +20,11 @@ class Strategy:
     
     def get_param(self, name: str, ctx: SearchContext = None)->Optional[ParameterValue]:   
         return self._parameters.get(name, ctx)
+    
+    def set_param(self, name: str, value: ParameterValue)->Strategy:
+        param = self._parameters.param(name)
+        self.param(name, param.min, param.max, value)
+        return self
 
     def init(self, initialization: PosGenerationMethod, size: int)->Strategy:
         self._initialization = initialization

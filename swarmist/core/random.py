@@ -34,8 +34,8 @@ class Random:
         return np.random.lognormal(loc=loc, scale=scale, size=self.size)
 
     #k=shape
-    def weibull(self, shape:float = 1.0, scale:float = 1.0)->List[float]:
-        return np.random.weibull(shape, scale=scale, size=self.size)
+    def weibull(self, shape:float = 1.0)->List[float]:
+        return np.random.weibull(shape, size=self.size)
 
     #loc=location
     def cauchy(self, loc:float = 0.0, scale:float = 1.0)->List[float]:
@@ -81,8 +81,8 @@ class BondedRandom(Random):
         ray_val = np.clip(np.multiply(scale, np.sqrt(-2*np.log(super().rand()))),0,1)
         return self.lbound + ray_val * (self.ubound - self.lbound)
     
-    def weibull(self, shape:float = 1.0, scale:float = 1.0, )->List[float]:
-        wei_val = np.clip(super().weibull(shape=shape, scale=scale), 0, 1)
+    def weibull(self, shape:float = 1.0)->List[float]:
+        wei_val = np.clip(super().weibull(shape=shape), 0, 1)
         return self.lbound + wei_val * (self.ubound - self.lbound)
     
     def cauchy(self, loc:float = 0.0, scale:float = 1.0)->List[float]:
