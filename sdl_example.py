@@ -7,13 +7,11 @@ SEARCH(
     MINIMIZE SUM(X **  2)
 )
 USING (
-    PARAMETERS (
-        ALPHA = 1 BOUNDED BY (0, 2)
-        DELTA = 0.97 BOUNDED BY (0, 1)
-        BETA = 1 BOUNDED BY (0, 2)
-        GAMMA = 0.01 BOUNDED BY (0, 1)
-    )
-    POPULATION SIZE(40) INIT RANDOM_UNIFORM()
+    PARAM ALPHA = AUTO FLOAT BOUNDED BY (0, 2) 
+    PARAM BETA = AUTO FLOAT BOUNDED BY (0, 2) 
+    PARAM DELTA = AUTO FLOAT BOUNDED BY (0,1)
+    PARAM GAMMA = AUTO FLOAT BOUNDED BY (0,1)
+    POPULATION SIZE(AUTO INT BOUNDED BY (10, 100)) INIT RANDOM_UNIFORM()
     SELECT ALL (
         UPDATE (
             ALPHA = ( PARAM(ALPHA) * PARAM(DELTA) ) **  CURR_GEN
@@ -28,10 +26,12 @@ USING (
             )
         )
     )
+    TUNE AUTO UNTIL(GENERATION=10)
 )
 UNTIL (
     GENERATION = 1000
-)
-"""
+) 
+""" 
 
 results = sw.sdl.execute(expression) 
+print(results)

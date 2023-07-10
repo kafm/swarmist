@@ -1,11 +1,12 @@
+from typing import Union
 from swarmist.sdl.parser import Parser
-from swarmist.core.dictionary import SearchResults
+from swarmist.core.dictionary import SearchResults, TuneResults
 from swarmist.strategy import Strategy
 
 class Sdl:
     """Swarmist Domain Language (SDL) interface."""
 
-    def execute(self, query: str)->SearchResults:
+    def execute(self, query: str)->Union[SearchResults, TuneResults]:
         query = Parser().parse(query)
         return query()
     

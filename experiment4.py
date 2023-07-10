@@ -1,60 +1,45 @@
 import swarmist as sw
-import datetime, csv
-from multiprocessing import Pool
-from opfunu.cec_based.cec2017 import *
+import datetime
 
-numDimensions = 30
-numExperiences = 30
-numGen = 2500
-maxEvals = numGen * 40
-bounds = sw.Bounds(min=-100, max=100)
-problem = F12017(ndim=numDimensions).evaluate
+problem, bounds = sw.benchmark.sphere()
+numDimensions = 20
+maxGenerations = 1000
+maxEvals = 100000
+populationSize = 40
 
-fips = sw.sdl.strategy("""
-        PARAMETERS (
-            PHI = 4.1 BOUNDED BY (0, 8)
-            CHI = 0.7298 BOUNDED BY (0, 1)
-        )
-        POPULATION SIZE(40) INIT RANDOM_UNIFORM() WITH TOPOLOGY LBEST SIZE(2)
-        SELECT ALL (
-            UPDATE (
-                NEIGHBORS = NEIGHBORHOOD()
-                N = COUNT(NEIGHBORS)
-                W = RANDOM(SIZE=N)
-                PHI = SUM(W) * (PARAM(PHI) / N)
-                PM = AVG(NEIGHBORS, W)
-                SCT = PHI * (PM - POS)
-                POS = POS + PARAM(CHI) * (DELTA + SCT)
-            ) 
-        )    
-    """)
-st = sw.sdl.strategy("""
-        PARAMETERS (
-            PHI = 4.1 BOUNDED BY (0, 8)
-            CHI = 0.7298 BOUNDED BY (0, 1)
-        )
-        POPULATION SIZE(40) INIT RANDOM_UNIFORM()
-        SELECT ALL (
-            UPDATE (
-                W = RANDOM(SIZE=2)
-                PHI = SUM(W) * (PARAM(PHI) / 2)
-                PM = AVG(PICK_ROULETTE(unique 2 with replacement), W)
-                SCT = PHI * (PM - POS)
-                POS = POS + PARAM(CHI) * (DELTA + SCT)
-            ) 
-        )  
-    """)
-#weibull
-fit = sw.search(
+st = sw.strategy()
+st.param("c1", value=sw.AutoFloat(min=0, max=4.1))
+st.param("c2", value=sw.AutoFloat(min=0, max=4.1))
+st.param("chi", value=sw.AutoFloat(min=0, max=1))
+st.init(sw.init.random(), size=sw.AutoInteger(min=10, max=100))
+st.topology(sw.topology.gbest())
+st.pipeline(
+    sw.select(sw.all())
+    .update(
+        gbest=sw.swarm.best(),
+        pbest=sw.agent.best(),
+        velocity=lambda ctx: ctx.param("chi")
+        * (
+            ctx.agent.delta
+            + ctx.param("c1") * ctx.random.rand() * (ctx.get("pbest") - ctx.agent.pos)
+            + ctx.param("c2") * ctx.random.rand() * (ctx.get("gbest") - ctx.agent.pos)
+        ),
+        pos=lambda ctx: ctx.agent.pos + ctx.get("velocity"),
+    )
+    .recombinant(sw.recombination.replace_all()),
+)
+
+
+
+start_time = datetime.datetime.now()
+
+res = sw.search(
     sw.minimize(problem, bounds, dimensions=numDimensions),
     sw.until(max_evals=maxEvals),
-    sw.using(st)
-)[-1].fit
+    sw.tune(st, max_gen=100)
+    #sw.using(st),
+)
 
-fips_fit = sw.search(
-    sw.minimize(problem, bounds, dimensions=numDimensions),
-    sw.until(max_evals=maxEvals),
-    sw.using(fips)
-)[-1].fit
-
-print(f"Fit {fit}, Fips: {fips_fit}")
+duration = (datetime.datetime.now() - start_time).total_seconds()
+print(f"End opt after {duration} seconds")
+print(f"res={res}")

@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Dict, List, Callable, Any, Optional
 from dataclasses import dataclass
 from pymonad.either import Either, Right, Left
-from swarmist.core.dictionary import PosGenerationMethod, TopologyBuilder, ParameterValue, Parameters, SearchStrategy, SearchContext, Initialization
+from swarmist.core.dictionary import PosGenerationMethod, TopologyBuilder, ParameterValue, Parameters, SearchStrategy, SearchContext, Initialization, Bounds
 from swarmist.initialization import InitializationMethods, TopologyMethods
 from swarmist.update import UpdateBuilder
 
@@ -14,18 +14,13 @@ class Strategy:
         self._population_size = 20
         self._pipeline_builders: List[UpdateBuilder] = []
 
-    def param(self, name: str, min: float, max: float, value: Optional[ParameterValue]=None)->Strategy:
-        self._parameters.add(name, min, max, value)
+    def param(self, name: str, value: ParameterValue, bounds:Optional[Bounds]=None)->Strategy:
+        self._parameters.add(name, value, bounds)
         return self
     
     def get_param(self, name: str, ctx: SearchContext = None)->Optional[ParameterValue]:   
         return self._parameters.get(name, ctx)
     
-    def set_param(self, name: str, value: ParameterValue)->Strategy:
-        param = self._parameters.param(name)
-        self.param(name, param.min, param.max, value)
-        return self
-
     def init(self, initialization: PosGenerationMethod, size: int)->Strategy:
         self._initialization = initialization
         self._population_size = size

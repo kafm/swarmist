@@ -168,7 +168,6 @@ class MathExpressions(Expressions):
                 return vals.avg(weights=w)
             if not hasattr(vals, "__len__"):
                 return vals
-            print(vals, w)
             return np.average(vals,  axis=0, weights=w)
         return callback
 

@@ -10,10 +10,12 @@ grammar = """
     ?constraint: math_expr "<=" math_expr -> le_constraint
         | math_expr ">=" math_expr -> ge_constraint
         | math_expr "=" math_expr -> eq_constraint
-    ?strategy_expr: parameters_expr? init_population_expr update_expr+ -> build_strategy
-    ?parameters_expr: "parameters"i "(" parameter+ ")"
-    ?parameter: key "=" math_expr bounds_expr? -> set_parameter
-    ?init_population_expr: "population"i size_expr "init"i init_pos_expr topology_expr? -> init
+    ?strategy_expr: parameters_expr? init_population_expr update_expr+ tune_expr? -> build_strategy
+    ?tune_expr: "tune"i "auto"i "until"i "(" "generation"i "=" integer ")"  -> set_tunning_config
+    ?parameters_expr: parameter*
+    ?parameter: "param"i key "=" math_expr bounds_expr? -> set_parameter
+        | "param"i key "=" (auto_int | auto_float) -> set_auto_parameter
+    ?init_population_expr: "population"i (size_expr | auto_size_expr) "init"i init_pos_expr topology_expr? -> init
     ?init_pos_expr: "random"i  "(" random_props_without_size? ")"  -> init_random
         | "random_uniform"i "(" random_props_without_size? ")" -> init_random_uniform
         | "random_normal"i "(" random_props_without_size? ")"  -> init_random_uniform
@@ -28,6 +30,8 @@ grammar = """
     ?topology_expr: "with"i "topology"i topology
     ?topology: "gbest"i -> gbest_topology
         | "lbest"i size_expr? -> lbest_topology
+    ?auto_int: "auto"i "int"i bounds_expr -> auto_integer
+    ?auto_float: "auto"i "float"i bounds_expr -> auto_float
     ?bounds_expr: "bounded"i "by"i "(" bound "," bound ")" -> bounds
     ?bound: value -> bound 
         | "-" value -> neg_bound
@@ -91,6 +95,7 @@ grammar = """
         | "improved"i   -> agent_improved
     ?probability: (value | param) -> probability
     ?size_expr: "size"i "(" integer ")"
+    ?auto_size_expr: "size"i "(" auto_int ")"
     ?termination_expr: termination_condition+ -> stop_condition
     ?termination_condition: "evaluations"i "=" integer -> set_max_evals
         | "generation"i "=" integer -> set_max_gen

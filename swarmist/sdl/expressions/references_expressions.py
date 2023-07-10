@@ -108,3 +108,4 @@ class ReferencesExpressions(Expressions):
 
     def self_agent_improved(self):
         return lambda a: cast(Agent, a).improved
+ 

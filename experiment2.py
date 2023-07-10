@@ -6,6 +6,7 @@ from opfunu.cec_based.cec2017 import *
 numDimensions = 30
 numExperiences = 30
 numGen = 2500
+numEvals = 100000
 bounds = sw.Bounds(min=-100, max=100)
 
 algos = {

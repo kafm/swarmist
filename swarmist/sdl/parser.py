@@ -1,10 +1,17 @@
 from typing import Any, Optional, cast
-from lark import Lark, v_args
+from lark import Lark, v_args, Tree
 from typing import List, Callable, Union
 import numpy as np
 import swarmist as sw
 from swarmist.update import UpdateBuilder
-from swarmist.core.dictionary import UpdateContext, Selection, Bounds, Agent
+from swarmist.core.dictionary import (
+    UpdateContext,
+    Selection,
+    Bounds,
+    Agent,
+    AutoFloat,
+    AutoInteger,
+)
 from .grammar import grammar
 from .expressions import *
 
@@ -23,15 +30,31 @@ class GrammarTransformer(
         self._strategy = sw.strategy()
         self._pipeline: List[UpdateBuilder] = []
         self._get_var = None
+        self._tune_until_generation = None
+        self._requires_tunning = False
 
     def search(self, space_assets: SpaceAssets, strategy: sw.Strategy, stop_condition):
         self._get_var = space_assets.get_var
+        if not self._requires_tunning:
+            if self._tune_until_generation:
+                raise "Tune configuration provided but no auto expressions found"
+            return lambda: sw.search(
+                space_assets.space, sw.until(**stop_condition), sw.using(strategy)
+            )
+        elif not self._tune_until_generation:
+            raise "Tune configuration not provided but auto expressions found"
         return lambda: sw.search(
-            space_assets.space, sw.until(**stop_condition), sw.using(strategy)
+            space_assets.space,
+            sw.until(**stop_condition),
+            sw.tune(strategy, max_gen=self._tune_until_generation),
         )
 
     def build_strategy(self, *_):
         return self._strategy.pipeline(*self._pipeline)
+
+    def set_tunning_config(self, max_gen):
+        self._tune_until_generation = max_gen
+        return None
 
     def init(self, pop_size, init_method, topology=None):
         self._strategy.init(init_method, pop_size)
@@ -59,7 +82,7 @@ class GrammarTransformer(
                 return ctx[name.lower()]
             else:
                 return self._get_var(ctx, name)
-            
+
         return callback
 
     def get_parameter(self, name: str):
@@ -70,9 +93,21 @@ class GrammarTransformer(
 
         return callback
 
-    def set_parameter(self, name, value, bounds: Bounds = Bounds(-np.inf, np.inf)):
-        self._strategy.param(name, value, bounds.min, bounds.max)
+    def set_parameter(self, name, value, bounds: Optional[Bounds] = None):
+        self._strategy.param(name, value, bounds=bounds)
         return None
+
+    def set_auto_parameter(self, name, value: Union[AutoInteger, AutoFloat]):
+        self._strategy.param(name, value)
+        return None
+
+    def auto_integer(self, bounds: Bounds):
+        self._requires_tunning = True
+        return AutoInteger(bounds.min, bounds.max)
+
+    def auto_float(self, bounds: Bounds):
+        self._requires_tunning = True
+        return AutoFloat(bounds.min, bounds.max)
 
     def stop_condition(self, *args):
         return {arg[0]: arg[1] for arg in args}
@@ -106,7 +141,7 @@ class Parser:
             start=["start", "strategy_expr"],
         )
 
-    def parse(self, expression, start="start")->Union[sw.Strategy, sw.SearchResults]:
+    def parse(self, expression, start="start") -> Union[sw.Strategy, sw.SearchResults, sw.TuneResults]:
         self.transformer.__init__()
         result = self.lexer.parse(expression, start=start)
         # print(f"Expression: {expression}")

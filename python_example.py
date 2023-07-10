@@ -6,9 +6,9 @@ maxGenerations = 1000
 populationSize = 40
 
 st = sw.strategy()
-st.param("c1", value=2.05, min=0, max=4.1)
-st.param("c2", value=2.05, min=0, max=4.1)
-st.param("chi", value=0.729, min=0, max=1)
+st.param("c1", value=2.05)
+st.param("c2", value=2.05)
+st.param("chi", value=0.729)
 st.init(sw.init.random(), size=populationSize)
 st.topology(sw.topology.gbest())
 st.pipeline(

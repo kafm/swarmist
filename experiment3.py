@@ -43,7 +43,7 @@ st = sw.sdl.strategy("""
                 POS = POS + PARAM(CHI) * (DELTA + SCT)
             ) 
         ) 
-        TUNE UNTIL(GENERATION=400)
+        TRY AUTO UNTIL(GENERATION=400)
     """)
 
 st.param()

@@ -1,10 +1,7 @@
 from __future__ import annotations
-from typing import List, Optional, Callable, Tuple, cast
-from functools import partial, reduce
-from dataclasses import replace, astuple
+from typing import Optional, Callable
+from functools import partial
 from pymonad.either import Right, Either
-from pymonad.reader import Pipe
-import numpy as np
 from swarmist.core.dictionary import *
 from swarmist.core.executor import SearchExecutor
 from swarmist.core.evaluator import Evaluator
@@ -12,6 +9,8 @@ from swarmist.core.population import Population
 from swarmist.core.errors import try_catch, assert_at_least_one_nonnull
 from swarmist.strategy import Strategy
 from swarmist.space import SpaceBuilder
+from swarmist.tune import Tune
+import multiprocessing
 
 def init_population(strategy: SearchStrategy, ctx: SearchContext)->Either[Exception, Population]:
     return try_catch(
@@ -38,6 +37,26 @@ def do_search(
         strategy, executor.context()
     ).then(executor.evolve)
 
+def do_tune(
+    strategy: TuneStrategy, 
+    evaluator: Evaluator,
+    until: StopCondition
+)->Either[Exception, TuneResults]:
+    n_jobs = multiprocessing.cpu_count()
+    tuner = Tune(strategy,  partial(do_search, evaluator=evaluator, until=until))
+    return try_catch(lambda: tuner.optimize(jobs=n_jobs))
+
+def do_tune_or_search(
+    strategy: Union[SearchStrategy, TuneStrategy], 
+    evaluator: Evaluator,
+    until: StopCondition
+)->Either[Exception, Union[SearchResults, TuneResults]]:
+    return (
+        do_tune(strategy, evaluator, until) 
+        if isinstance(strategy, TuneStrategy)
+        else do_search(strategy, evaluator, until) 
+    )
+
 def until(
         fit: Optional[float] = None, 
         max_evals: Optional[int] = None, 
@@ -58,16 +77,26 @@ def until(
 def using(strategy: Strategy)->Either[Exception, Callable[..., SearchStrategy]]:
     return strategy.get
 
+def tune(strategy: Strategy, max_gen:int=50)->Either[Exception, Callable[..., TuneStrategy]]:
+    return lambda: strategy.get().then(
+        lambda st: Right(
+            TuneStrategy(
+                strategy=st,
+                max_gen=max_gen
+            )        
+        )      
+    )
+
 def search(
      space: SpaceBuilder, 
      until: Callable[...,Either[Exception, StopCondition]],
      strategy: Callable[..., Either[Exception, SearchStrategy]],
-)->SearchResults:
+)->Union[SearchResults, TuneResults]:
     def raise_error(e: Exception):
         raise e
     res: Either[Exception, SearchResults] = strategy().then(
         lambda search_strategy: until().then(
-            lambda stop_condition: do_search(
+            lambda stop_condition: do_tune_or_search(
                 strategy=search_strategy,
                 evaluator=space.get(),
                 until=stop_condition

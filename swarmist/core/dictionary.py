@@ -198,7 +198,7 @@ class IReference:
 class IReferences:
     def get(self, index: int) -> IReference:
         raise NotImplementedError()
-    
+
     def all(self) -> List[IReference]:
         raise NotImplementedError()
 
@@ -264,10 +264,25 @@ DynamicTopology = Callable[[AgentList], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
 
+@dataclass(frozen=True)
+class Auto(Generic[T]):
+    min: T
+    max: T
+
+
+@dataclass(frozen=True)
+class AutoInteger(Auto[int]):
+    _type: str = "integer"
+
+
+@dataclass(frozen=True)
+class AutoFloat(Auto[float]):
+    _type: str = "float"
+
 
 @dataclass(frozen=True)
 class Initialization:
-    population_size: int
+    population_size: int | AutoInteger
     generate_pos: PosGenerationMethod
     topology: TopologyBuilder
 
@@ -280,31 +295,40 @@ ParameterValue = Callable[[SearchContext], float]
 class Parameter:
     name: str
     value: ParameterValue
-    min: Optional[float]
-    max: Optional[float]
+    bounds: Optional[Bounds] = None
+
+
+@dataclass(frozen=True)
+class AutoParameter:
+    name: str
+    value: AutoInteger | AutoFloat
 
 
 class Parameters:
     def __init__(self):
-        self._parameters: Dict[str, Parameter] = {}
+        self._parameters: Dict[str, Union[Parameter, AutoParameter]] = {}
 
-    def add(
-        self,
-        name: str,
-        value: Union[float, int, ParameterValue],
-        min: Optional[float] = None,
-        max: Optional[float] = None,
-    ):
-        self._parameters[name] = Parameter(
-            name, value if callable(value) else lambda _: value, min, max
+    def add(self, name: str, value: Union[float, int, ParameterValue, Auto], bounds: Optional[Bounds] = None):
+        self._parameters[name] = (
+            AutoParameter(name, value)
+            if isinstance(value, Auto)
+            else Parameter(name, value if callable(value) else lambda _: value, bounds)
         )
 
-    def get(self, name: str, ctx: SearchContext) -> float:
-        param = self._parameters[name]
-        return np.clip(param.value(ctx), param.min, param.max)
-    
-    def param(self, name: str)->Parameter:
+    def get(self, name: str, ctx: Union[SearchContext, UpdateContext]) -> float:
+        param = self._parameters[name] 
+        val = param.value(self._get_context(ctx))
+        if param.bounds != None: 
+            return np.clip(val, param.bounds.min, param.bounds.max)
+        return val
+
+    def param(self, name: str) -> Union[Parameter, AutoParameter]:
         return self._parameters[name]
+    
+    def _get_context(self, ctx: Union[SearchContext, UpdateContext])->SearchContext:
+        if ctx != None and isinstance(ctx, UpdateContext):
+            return ctx.search_context
+        return ctx
 
     def __repr__(self):
         return f"Parameters({self._parameters})"
@@ -364,4 +388,15 @@ class SearchStrategy:
     update_pipeline: List[Update]
 
 
+@dataclass(frozen=True)
+class TuneStrategy:
+    strategy: SearchStrategy
+    max_gen: int
+
+
 SearchResults = List[Evaluation]
+
+@dataclass(frozen=True)
+class TuneResults:
+    parameters: Dict[str, Union[float, int]]
+    fit: Fit
