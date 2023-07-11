@@ -71,7 +71,7 @@ class Population:
     ) -> Agent:
         info = UpdateInfo.of(agent, self._ranking.group_info[agent.index], ctx=ctx)
         return self._evaluate_and_get(
-            agent=update.recombination(agent, update.editor(info)),
+            agent=update.recombination(info, update.editor(info)),
             old_agent=agent,
             condition=update.condition,
         )

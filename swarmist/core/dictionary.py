@@ -370,7 +370,7 @@ Selection = Callable[[GroupInfo], AgentList]
 Condition = Callable[[Agent], bool]
 Order = Callable[[Agent], Any]
 PosEditor = Callable[[UpdateContext], Pos]
-Recombination = Callable[[Agent, Pos], Agent]
+Recombination = Callable[[Agent, Pos, UpdateContext], Agent]
 
 
 @dataclass(frozen=True)

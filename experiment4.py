@@ -1,45 +1,29 @@
-import swarmist as sw
+import mealpy as mp
+import numpy as np
 import datetime
+from opfunu.cec_based.cec2017 import *
 
-problem, bounds = sw.benchmark.sphere()
-numDimensions = 20
-maxGenerations = 1000
-maxEvals = 100000
+numDimensions = 30
+numExperiences = 30
+numGen = 2500
+numEvals = 100000
 populationSize = 40
 
-st = sw.strategy()
-st.param("c1", value=sw.AutoFloat(min=0, max=4.1))
-st.param("c2", value=sw.AutoFloat(min=0, max=4.1))
-st.param("chi", value=sw.AutoFloat(min=0, max=1))
-st.init(sw.init.random(), size=sw.AutoInteger(min=10, max=100))
-st.topology(sw.topology.gbest())
-st.pipeline(
-    sw.select(sw.all())
-    .update(
-        gbest=sw.swarm.best(),
-        pbest=sw.agent.best(),
-        velocity=lambda ctx: ctx.param("chi")
-        * (
-            ctx.agent.delta
-            + ctx.param("c1") * ctx.random.rand() * (ctx.get("pbest") - ctx.agent.pos)
-            + ctx.param("c2") * ctx.random.rand() * (ctx.get("gbest") - ctx.agent.pos)
-        ),
-        pos=lambda ctx: ctx.agent.pos + ctx.get("velocity"),
-    )
-    .recombinant(sw.recombination.replace_all()),
-)
+def fitness_function(solution):
+    return np.sum(solution**2)
+
+problem = {
+    "fit_func": fitness_function,
+    "lb": [-100, ] * 30,
+    "ub": [100, ] * 30,
+    "minmax": "min",
+    "log_to": None,
+    "save_population": False,
+}
+
+## Run the algorithm
+model = mp.SMA.BaseSMA(epoch=100, pop_size=50, pr=0.03)
+best_position, best_fitness = model.solve(problem)
+print(f"Best solution: {best_position}, Best fitness: {best_fitness}")
 
 
-
-start_time = datetime.datetime.now()
-
-res = sw.search(
-    sw.minimize(problem, bounds, dimensions=numDimensions),
-    sw.until(max_evals=maxEvals),
-    sw.tune(st, max_gen=100)
-    #sw.using(st),
-)
-
-duration = (datetime.datetime.now() - start_time).total_seconds()
-print(f"End opt after {duration} seconds")
-print(f"res={res}")

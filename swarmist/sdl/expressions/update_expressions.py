@@ -62,16 +62,16 @@ class UpdateExpressions(Expressions):
         return True
 
     def binomial_recombination(self, probability):
-        return RecombinationMethods().binomial(probability())
+        return RecombinationMethods().binomial(cr_probability=lambda ctx: probability(ctx))
 
     def exponential_recombination(self, probability):
-        return RecombinationMethods().exponential(probability())
+        return RecombinationMethods().exponential(cr_probability=lambda ctx: probability(ctx))
 
     def with_probability_recombination(self, probability):
-        return RecombinationMethods().k_with_probability(probability())
+        return RecombinationMethods().k_with_probability(probability=lambda ctx: probability(ctx))
 
     def random_recombination(self, size):
-        return RecombinationMethods().k_random(size)
+        return RecombinationMethods().k_random(k=lambda ctx: size(ctx))
 
     def update_pos(self, *args):
         return OrderedDict({arg[0]: arg[1] for arg in args})
