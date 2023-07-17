@@ -68,7 +68,7 @@ class Tune:
             raise cast(Exception, res.monoid[0])
         return cast(SearchResults, res.value)[-1].fit
 
-    def optimize(self, jobs: int = 1) -> SearchResults:
+    def optimize(self, jobs: int = 1) -> Either[Exception, TuneResults]:
         study = optuna.create_study(direction="minimize")
         try:
             study.optimize(self.objective, n_trials=self.strategy.max_gen, n_jobs=jobs)
@@ -78,4 +78,5 @@ class Tune:
                 parameters=trial.params
             ))
         except Exception as e:
+            print(e)
             return Left(e)

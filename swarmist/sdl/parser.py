@@ -5,6 +5,7 @@ import numpy as np
 import swarmist as sw
 from swarmist.update import UpdateBuilder
 from swarmist.core.dictionary import (
+    SearchContext,
     UpdateContext,
     Selection,
     Bounds,
@@ -72,8 +73,8 @@ class GrammarTransformer(
         def callback(ctx=None):
             if ctx is None:
                 raise ValueError("Getting var with no context is not allowed")
-            elif name.lower() == "population_size":
-                return self._strategy.population_size()
+            # elif name.lower() == "population_size":
+            #     return self._strategy.population_size()
             elif isinstance(ctx, FunctionContext):
                 return ctx.get_arg(name, prop)
             elif isinstance(ctx, UpdateContext):
@@ -141,7 +142,9 @@ class Parser:
             start=["start", "strategy_expr"],
         )
 
-    def parse(self, expression, start="start") -> Union[sw.Strategy, sw.SearchResults, sw.TuneResults]:
+    def parse(
+        self, expression, start="start"
+    ) -> Union[sw.Strategy, sw.SearchResults, sw.TuneResults]:
         self.transformer.__init__()
         result = self.lexer.parse(expression, start=start)
         # print(f"Expression: {expression}")

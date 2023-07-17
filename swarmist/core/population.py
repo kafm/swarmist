@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List
+from typing import List, Callable, Union
 from functools import partial, reduce
 from dataclasses import replace
 import numpy as np
@@ -17,6 +17,7 @@ from swarmist.core.dictionary import (
     PopulationInfo,
     GroupInfo,
     Update,
+    AutoInteger,
 )
 from swarmist.core.errors import assert_equal_length
 from swarmist.core.info import AgentsInfo, UpdateInfo
@@ -25,7 +26,9 @@ from swarmist.core.info import AgentsInfo, UpdateInfo
 class Population:
     def __init__(self, strategy: SearchStrategy, ctx: SearchContext):
         self._strategy = strategy
-        self._size = strategy.initialization.population_size
+        self._size = self._get_population_size(
+            strategy.initialization.population_size, ctx
+        )
         self._ndims = ctx.ndims
         self._bounds = ctx.bounds
         self._evaluate = ctx.evaluate
@@ -65,6 +68,15 @@ class Population:
                 new_agent = self._get_updated_agent(agent, update, ctx)
                 self._agents[new_agent.index] = new_agent
             self.rank(ctx)
+
+    def _get_population_size(
+        self,
+        size: Union[int, AutoInteger, Callable[[SearchContext], int]],
+        ctx: SearchContext,
+    ):
+        if isinstance(size, AutoInteger):
+            raise "Population cannot be initialized with auto integer"
+        return int(size(ctx)) if callable(size) else size
 
     def _get_updated_agent(
         self, agent: Agent, update: Update, ctx: SearchContext
@@ -113,6 +125,7 @@ class Population:
             fit=fit,
             trials=0,
             improved=True,
+            parameters=ctx.parameters
         )
 
     def _get_topology(self, builder: TopologyBuilder) -> Topology:

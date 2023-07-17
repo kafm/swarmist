@@ -65,7 +65,7 @@ grammar = """
     ?recombination_method: "binomial"i "recombination"i "with"i "probability"i probability  -> binomial_recombination
         | "exponential"i "recombination"i "with"i "probability"i probability    -> exponential_recombination
         | "recombination"i "with"i "probability"i probability   -> with_probability_recombination
-        | "random"i "recombination"i size_expr  -> random_recombination
+        | "random"i "recombination"i (size_expr | auto_size_expr)  -> random_recombination
     ?references_expr: "swarm_best"i "(" integer? ")"    -> swarm_best
         | "swarm_worst"i "(" integer? ")"   -> swarm_worst
         | "all"i "(" ")"  -> swarm_all
@@ -94,7 +94,7 @@ grammar = """
         | "fit"i    -> agent_fit
         | "improved"i   -> agent_improved
     ?probability: (value | param) -> probability
-    ?size_expr: "size"i "(" integer ")"
+    ?size_expr: "size"i "(" (integer | param) ")"
     ?auto_size_expr: "size"i "(" auto_int ")"
     ?termination_expr: termination_condition+ -> stop_condition
     ?termination_condition: "evaluations"i "=" integer -> set_max_evals

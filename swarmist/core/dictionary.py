@@ -37,9 +37,19 @@ class StopCondition:
 
 
 @dataclass(frozen=True)
-class SearchContext:
-    evaluate: Callable[[Pos], Evaluation]
+class StrategyContext:
     parameters: Parameters
+
+    def param(self, name: str) -> float:
+        return self.parameters.get(name, self)
+    
+    def __getitem__(self, item):
+        return getattr(self, item)
+
+
+@dataclass(frozen=True)
+class SearchContext(StrategyContext):
+    evaluate: Callable[[Pos], Evaluation]
     ndims: int
     bounds: Bounds
     curr_gen: int
@@ -49,10 +59,6 @@ class SearchContext:
     curr_eval: int
     max_evals: int
 
-    def __getitem__(self, item):
-        return getattr(self, item)
-
-
 FitnessFunction = Callable[[Pos], Fit]
 ConstraintChecker = Callable[[Pos], Fit]
 ConstraintValue = ConstraintChecker | Fit
@@ -60,7 +66,7 @@ ConstraintsChecker = List[ConstraintChecker]
 
 
 @dataclass(frozen=True)
-class Agent:
+class Agent(StrategyContext):
     index: int
     ndims: int
     delta: Pos
@@ -69,10 +75,6 @@ class Agent:
     fit: Fit
     trials: int
     improved: bool
-
-    def __getitem__(self, item):
-        return getattr(self, item)
-
 
 AgentList = List[Agent]
 
@@ -264,6 +266,7 @@ DynamicTopology = Callable[[AgentList], StaticTopology]
 Topology = StaticTopology | DynamicTopology
 TopologyBuilder = Callable[[AgentList], Topology]
 
+
 @dataclass(frozen=True)
 class Auto(Generic[T]):
     min: T
@@ -282,7 +285,7 @@ class AutoFloat(Auto[float]):
 
 @dataclass(frozen=True)
 class Initialization:
-    population_size: int | AutoInteger
+    population_size: int | AutoInteger | Callable[[SearchContext], int]
     generate_pos: PosGenerationMethod
     topology: TopologyBuilder
 
@@ -308,7 +311,12 @@ class Parameters:
     def __init__(self):
         self._parameters: Dict[str, Union[Parameter, AutoParameter]] = {}
 
-    def add(self, name: str, value: Union[float, int, ParameterValue, Auto], bounds: Optional[Bounds] = None):
+    def add(
+        self,
+        name: str,
+        value: Union[float, int, ParameterValue, Auto],
+        bounds: Optional[Bounds] = None,
+    ):
         self._parameters[name] = (
             AutoParameter(name, value)
             if isinstance(value, Auto)
@@ -316,16 +324,16 @@ class Parameters:
         )
 
     def get(self, name: str, ctx: Union[SearchContext, UpdateContext]) -> float:
-        param = self._parameters[name] 
+        param = self._parameters[name]
         val = param.value(self._get_context(ctx))
-        if param.bounds != None: 
+        if param.bounds != None:
             return np.clip(val, param.bounds.min, param.bounds.max)
         return val
 
     def param(self, name: str) -> Union[Parameter, AutoParameter]:
         return self._parameters[name]
-    
-    def _get_context(self, ctx: Union[SearchContext, UpdateContext])->SearchContext:
+
+    def _get_context(self, ctx: Union[SearchContext, UpdateContext]) -> SearchContext:
         if ctx != None and isinstance(ctx, UpdateContext):
             return ctx.search_context
         return ctx
@@ -358,7 +366,7 @@ class UpdateContext:
     vars: Dict[str, Union[Pos, IReference, IReferences]]
 
     def param(self, name: str) -> float:
-        return self.search_context.parameters.get(name, self)
+        return self.search_context.param(name, self)
 
     def get(self, name: str) -> Union[Pos, IReference, IReferences]:
         if name not in self.vars:
@@ -395,6 +403,7 @@ class TuneStrategy:
 
 
 SearchResults = List[Evaluation]
+
 
 @dataclass(frozen=True)
 class TuneResults:

@@ -2,7 +2,7 @@ from lark import v_args
 from typing import Optional, cast
 from dataclasses import dataclass
 from collections import OrderedDict
-from swarmist.core.dictionary import Condition, UpdateContext
+from swarmist.core.dictionary import Condition
 from swarmist.recombination import RecombinationMethods, RecombinationMethod
 from swarmist import all, filter, order, limit, roulette, random, with_probability
 from .expressions import Expressions
@@ -71,7 +71,8 @@ class UpdateExpressions(Expressions):
         return RecombinationMethods().k_with_probability(probability=lambda ctx: probability(ctx))
 
     def random_recombination(self, size):
-        return RecombinationMethods().k_random(k=lambda ctx: size(ctx))
+        k = size if callable(size) else lambda _: size
+        return RecombinationMethods().k_random(k=k)
 
     def update_pos(self, *args):
         return OrderedDict({arg[0]: arg[1] for arg in args})
