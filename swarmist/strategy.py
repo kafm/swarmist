@@ -10,7 +10,8 @@ from swarmist.core.dictionary import (
     SearchContext,
     Initialization,
     Bounds,
-    StrategyContext
+    StrategyContext, 
+    AutoInteger
 )
 from swarmist.initialization import InitializationMethods, TopologyMethods
 from swarmist.update import UpdateBuilder
@@ -47,13 +48,6 @@ class Strategy:
     def pipeline(self, *updates: UpdateBuilder) -> Strategy:
         self._pipeline_builders = list(updates)
         return self
-
-    def population_size(self) -> Union[int, Callable[[StrategyContext], int]]:
-        return (
-            int(self._population_size(StrategyContext(self._parameters)))
-            if callable(self._population_size)
-            else self._population_size
-        )
 
     def get(self) -> Either[Exception, SearchStrategy]:
         try:

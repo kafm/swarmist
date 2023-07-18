@@ -26,9 +26,7 @@ from swarmist.core.info import AgentsInfo, UpdateInfo
 class Population:
     def __init__(self, strategy: SearchStrategy, ctx: SearchContext):
         self._strategy = strategy
-        self._size = self._get_population_size(
-            strategy.initialization.population_size, ctx
-        )
+        self._size = ctx.population_size
         self._ndims = ctx.ndims
         self._bounds = ctx.bounds
         self._evaluate = ctx.evaluate
@@ -69,14 +67,7 @@ class Population:
                 self._agents[new_agent.index] = new_agent
             self.rank(ctx)
 
-    def _get_population_size(
-        self,
-        size: Union[int, AutoInteger, Callable[[SearchContext], int]],
-        ctx: SearchContext,
-    ):
-        if isinstance(size, AutoInteger):
-            raise "Population cannot be initialized with auto integer"
-        return int(size(ctx)) if callable(size) else size
+
 
     def _get_updated_agent(
         self, agent: Agent, update: Update, ctx: SearchContext

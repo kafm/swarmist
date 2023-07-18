@@ -18,7 +18,6 @@ def init_population(
 ) -> Either[Exception, Population]:
     return try_catch(lambda: Population(strategy=strategy, ctx=ctx))
 
-
 def do_search(
     strategy: SearchStrategy, evaluator: Evaluator, until: StopCondition
 ) -> Either[Exception, SearchResults]:

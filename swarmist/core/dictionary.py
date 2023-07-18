@@ -58,6 +58,7 @@ class SearchContext(StrategyContext):
     min_fit: Fit
     curr_eval: int
     max_evals: int
+    population_size: int
 
 FitnessFunction = Callable[[Pos], Fit]
 ConstraintChecker = Callable[[Pos], Fit]
@@ -285,7 +286,7 @@ class AutoFloat(Auto[float]):
 
 @dataclass(frozen=True)
 class Initialization:
-    population_size: int | AutoInteger | Callable[[SearchContext], int]
+    population_size: int | AutoInteger #| Callable[[SearchContext], int]
     generate_pos: PosGenerationMethod
     topology: TopologyBuilder
 
@@ -323,7 +324,7 @@ class Parameters:
             else Parameter(name, value if callable(value) else lambda _: value, bounds)
         )
 
-    def get(self, name: str, ctx: Union[SearchContext, UpdateContext]) -> float:
+    def get(self, name: str, ctx: Union[StrategyContext, SearchContext, UpdateContext]) -> float:
         param = self._parameters[name]
         val = param.value(self._get_context(ctx))
         if param.bounds != None:
@@ -366,7 +367,7 @@ class UpdateContext:
     vars: Dict[str, Union[Pos, IReference, IReferences]]
 
     def param(self, name: str) -> float:
-        return self.search_context.param(name, self)
+        return self.search_context.parameters.get(name, self)
 
     def get(self, name: str) -> Union[Pos, IReference, IReferences]:
         if name not in self.vars:

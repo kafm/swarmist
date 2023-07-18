@@ -1,9 +1,17 @@
 from __future__ import annotations
-from typing import Optional, List, Callable
+from typing import Optional, List, Callable, Union
 from pymonad.either import Right, Left, Either
 import sys
 import numpy as np
-from swarmist.core.dictionary import Parameters, SearchContext, Fit, Pos, SearchResults
+from swarmist.core.dictionary import (
+    Parameters,
+    SearchContext,
+    Fit,
+    Pos,
+    SearchResults,
+    AutoInteger,
+    StrategyContext,
+)
 from swarmist.core.errors import SearchEnded
 from swarmist.core.evaluator import Evaluator, Evaluation
 from swarmist.core.population import Population
@@ -23,12 +31,9 @@ class SearchExecutor:
         self.parameters = parameters
         self.min_fit = min_fit
         self.max_evals = max_evals
+        self.population_size = self._get_population_size(population_size)
         self.max_gen = sys.maxsize if not max_gen else max_gen
-        self.expected_max_gen = (
-            min(int(max_evals / population_size), self.max_gen)
-            if max_evals and population_size
-            else self.max_gen
-        )
+        self.expected_max_gen = self._get_expected_max_gen()
         self.curr_fit: Fit = np.inf
         self.curr_pos: Pos = None
         self.curr_gen: int = 0
@@ -48,6 +53,7 @@ class SearchExecutor:
             min_fit=self.min_fit,
             curr_eval=self.curr_eval,
             max_evals=self.max_evals,
+            population_size=self.population_size,
         )
 
     def evaluate(self, pos: Pos) -> Evaluation:
@@ -82,6 +88,21 @@ class SearchExecutor:
             self._results.append(Evaluation(self.curr_pos, self.curr_fit))
             return True
         return False
+
+    def _get_expected_max_gen(self) -> int:
+        return (
+            min(int(self.max_evals / self.population_size), self.max_gen)
+            if self.max_evals and self.population_size
+            else self.max_gen
+        )
+
+    def _get_population_size(
+        self,
+        size: Union[int, AutoInteger, Callable[[SearchContext], int]],
+    ) -> int:
+        if isinstance(size, AutoInteger):
+            raise "Population cannot be initialized with auto integer"
+        return int(size(StrategyContext(self.parameters))) if callable(size) else size
 
     def _assert_max_evals(self):
         if self.max_evals and self.curr_eval >= self.max_evals:
