@@ -5,19 +5,13 @@ from multiprocessing import Pool
 from opfunu.cec_based.cec2017 import *
 
 numDimensions = 30
-numExperiences = 29
+numExperiences = 30
 numGen = 2500
 numEvals = 100000
 populationSize = 40
 
 algos = {
-    "PSO": mp.PSO.OriginalPSO(epoch=numGen,pop_size=populationSize,c1=2.05, c2=2.05, w_min=0.45, w_max=0.73),
-    "DE": mp.DE.BaseDE(epoch=numGen, pop_size=populationSize, cr=.6, wf=.5),
-    "JAYA": mp.JA.BaseJA(epoch=numGen, pop_size=populationSize), #change to Original
-    "FF": mp.FFA.OriginalFFA(epoch=numGen, pop_size=populationSize, gamma=0.01, beta_base=1, alpha=0.99, delta=0.97),
-    "GWO": mp.GWO.OriginalGWO(epoch=numGen, pop_size=populationSize),
-    "SCA": mp.SCA.OriginalSCA(epoch=numGen, pop_size=populationSize),
-    "WO": mp.WOA.OriginalWOA(epoch=numGen, pop_size=populationSize)
+    "JAYA": mp.JA.OriginalJA(epoch=numGen, pop_size=populationSize)
 }
 
 problems = {
@@ -43,7 +37,7 @@ problems = {
     "F20": F202017(ndim=numDimensions).evaluate
 }
 
-resultsFile = open("experiment3_mealpy_results.csv", "w")
+resultsFile = open("experiment3_mealpy_results_jaya_fix.csv", "w")
 resultsWriter = csv.writer(resultsFile, lineterminator="\n")
 resultsWriter.writerow(["num_exp", "problem", "algo", "fit"])
 

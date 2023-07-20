@@ -3,13 +3,24 @@ from lark import v_args
 from typing import Optional, cast, List, Dict, Any, Callable, Union
 from dataclasses import dataclass
 from functools import reduce
-from swarmist.core.dictionary import UpdateContext, IReferences, IReference, Agent, Pos, AgentList
-from .expressions import Expressions, fetch_value 
+from swarmist.core.dictionary import (
+    UpdateContext,
+    IReferences,
+    IReference,
+    Agent,
+    Pos,
+    AgentList,
+)
+from .expressions import Expressions, fetch_value
 import numpy as np
 
 
 @v_args(inline=True)
 class FunctionExpressions(Expressions):
+    def apply_func(self, value: Callable, func: FunctionDef):
+        args = func.args
+        body = func.body
+        return lambda ctx=None: body(FunctionContext.of(ctx, {args[0]: value(ctx)}))
 
     def map_func(self, values: Callable, func: FunctionDef):
         args = func.args
@@ -19,10 +30,7 @@ class FunctionExpressions(Expressions):
 
         def callback(ctx: UpdateContext):
             to_map = self._get_value_list(values, ctx)
-            return [
-                body(FunctionContext.of(ctx, {args[0]: value}))
-                for value in to_map
-            ]
+            return [body(FunctionContext.of(ctx, {args[0]: value})) for value in to_map]
 
         return callback
 
@@ -64,7 +72,7 @@ class FunctionExpressions(Expressions):
 
     def _get_value_list(self, values, ctx: UpdateContext):
         _values = values(ctx)
-        if _values is None :
+        if _values is None:
             return []
         if isinstance(_values, IReferences):
             return cast(IReferences, _values).all()

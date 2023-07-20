@@ -11,8 +11,9 @@ from swarmist.core.dictionary import (
     UpdateContext,
     IReference,
     IReferences,
+    Bounds
 )
-from swarmist.core.random import Random
+from swarmist.core.random import BondedRandom
 
 
 @dataclass(frozen=True)
@@ -192,6 +193,16 @@ class SwarmMethods:
 
     def neighborhood(self) -> Callable[[UpdateContext], References]:
         return lambda ctx: ctx.swarm.all()
+    
+    def random_pos(self) -> Callable[[UpdateContext], Pos]:
+        def callback(ctx: UpdateContext) -> Pos:
+            bounds:Bounds = ctx.search_context.bounds
+            return BondedRandom(
+                lbound=bounds.min,
+                ubound=bounds.max,
+                size=ctx.search_context.ndims).uniform()
+        
+        return callback        
 
     def rand_to_best(self, f: float = 0.5) -> Callable[[UpdateContext], Pos]:
         def callback(ctx: UpdateContext) -> Pos:

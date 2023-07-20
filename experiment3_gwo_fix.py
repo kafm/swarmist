@@ -1,23 +1,31 @@
-import mealpy as mp
-import numpy as np
+import swarmist as sw
 import datetime, csv
 from multiprocessing import Pool
 from opfunu.cec_based.cec2017 import *
 
 numDimensions = 30
-numExperiences = 29
-numGen = 2500
+numExperiences = 30
 numEvals = 100000
-populationSize = 40
+bounds = sw.Bounds(min=-100, max=100)
 
 algos = {
-    "PSO": mp.PSO.OriginalPSO(epoch=numGen,pop_size=populationSize,c1=2.05, c2=2.05, w_min=0.45, w_max=0.73),
-    "DE": mp.DE.BaseDE(epoch=numGen, pop_size=populationSize, cr=.6, wf=.5),
-    "JAYA": mp.JA.BaseJA(epoch=numGen, pop_size=populationSize), #change to Original
-    "FF": mp.FFA.OriginalFFA(epoch=numGen, pop_size=populationSize, gamma=0.01, beta_base=1, alpha=0.99, delta=0.97),
-    "GWO": mp.GWO.OriginalGWO(epoch=numGen, pop_size=populationSize),
-    "SCA": mp.SCA.OriginalSCA(epoch=numGen, pop_size=populationSize),
-    "WO": mp.WOA.OriginalWOA(epoch=numGen, pop_size=populationSize)
+    "GWO": sw.sdl.strategy("""
+        PARAM  A = 2
+        POPULATION SIZE(40) INIT RANDOM_UNIFORM()
+        SELECT ALL (
+            UPDATE (
+                A = PARAM(A) - 2 * CURR_GEN / MAX_GEN
+                POS = AVG(
+                        MAP(
+                            SWARM_BEST(3), (REF) => REF.POS
+                                - (A * (2 * RANDOM(SIZE=NDIMS) - 1))
+                                * ABS((2 * RANDOM(SIZE=NDIMS)) * REF.POS - POS)
+                        )
+                    )
+            ) WHEN IMPROVED = TRUE
+        ) 
+    """),
+
 }
 
 problems = {
@@ -43,7 +51,7 @@ problems = {
     "F20": F202017(ndim=numDimensions).evaluate
 }
 
-resultsFile = open("experiment3_mealpy_results.csv", "w")
+resultsFile = open("experiment3_results_gwo_fix.csv", "w")
 resultsWriter = csv.writer(resultsFile, lineterminator="\n")
 resultsWriter.writerow(["num_exp", "problem", "algo", "fit"])
 
@@ -51,16 +59,13 @@ resultsWriter.writerow(["num_exp", "problem", "algo", "fit"])
 def runExperience(assets):
     num_exp, problem_name = assets
     results = []
-    for algo, model in algos.items():
-        _, best_fitness = model.solve({
-            "fit_func": problems[problem_name],
-            "lb": [-100, ] * numDimensions,
-            "ub": [100, ] * numDimensions,
-            "minmax": "min",
-            "log_to": None,
-            "save_population": False,
-        })
-        results.append([num_exp, problem_name, algo, best_fitness])
+    for algo, st in algos.items():
+        fit = sw.search(
+                sw.minimize(problems[problem_name], bounds, dimensions=numDimensions),
+                sw.until(max_evals=numEvals),
+                sw.using(st)
+            )[-1].fit
+        results.append([num_exp, problem_name, algo, fit])
     return results
 
 if __name__ == '__main__':
@@ -73,5 +78,3 @@ if __name__ == '__main__':
             print("[{time}] Ended experience no {no}".format(no=num_exp, time=datetime.datetime.now()))
                 
 resultsFile.close()
-
-

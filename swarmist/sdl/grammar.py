@@ -72,6 +72,7 @@ grammar = """
         | "neighborhood"i "(" ")"  -> swarm_neighborhood
         | "pick_random"i "(" pick_args ")" -> swarm_pick_random
         | "pick_roulette"i "(" pick_args ")"   -> swarm_pick_roulette
+        | "random_pos"i "(" ")" -> swarm_random_pos
         | "rand_to_best"i "(" "with"i "probability"i probability ")" -> swarm_rand_to_best
         | "current_to_best"i "(" "with"i "probability"i probability ")" -> swarm_current_to_best
         | param
@@ -80,10 +81,11 @@ grammar = """
     ?pick_unique_prop: "unique"i -> swarm_pick_unique_prop
     ?pick_size_prop: integer -> swarm_pick_size_prop
     ?pick_replace_prop: "with"i "replacement"i -> swarm_pick_replacement_prop
-    ?func_expr: "map"i "(" math_expr "," map_def ")" -> map_func
+    ?func_expr: "apply"i "(" math_expr "," apply_def ")" -> apply_func
+        | "map"i "(" math_expr "," apply_def ")" -> map_func
         | "reduce"i "(" math_expr "," reduce_def ("," math_expr)? ")" -> reduce_func
         | "filter"i "(" math_expr "," filter_def ")" -> filter_func
-    ?map_def: "(" key ")" "=>" math_expr -> func_def
+    ?apply_def: "(" key ")" "=>" math_expr -> func_def
     ?reduce_def: "(" key "," key ")" "=>" math_expr -> func_def
     ?filter_def: "(" key ")" "=>" conditions_expr -> func_def
     ?agent_prop: sortable_agent_prop

@@ -120,7 +120,8 @@ algos = {
             )
         )   
     """),
-    "GWO": sw.sdl.strategy("""
+    #change gwo implementation
+    "GWO": sw.sdl.strategy(""" 
         PARAM  A = 2
         POPULATION SIZE(40) INIT RANDOM_UNIFORM()
         SELECT ALL (

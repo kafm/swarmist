@@ -35,6 +35,9 @@ class ReferencesExpressions(Expressions):
             size=pick_args["size"],
             replace=pick_args["replace"],
         )
+    
+    def swarm_random_pos(self):
+        return swarm_methods.random_pos()
 
     def swarm_pick_args(self, *args):
         props = {"size": None, "replace": None, "unique": None}
