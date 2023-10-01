@@ -55,13 +55,13 @@ class AgentsInfo(GroupInfo):
     def best(self)->Agent:
         return self.agents[self.rank[0]] 
     
-    def worse(self)->Agent:
+    def worst(self)->Agent:
         return self.agents[self.rank[-1]] 
     
     def k_best(self, k: int)->AgentList:
         return [self.agents[i] for i in self.rank[:k]]
 
-    def k_worse(self, k: int)->AgentList:
+    def k_worst(self, k: int)->AgentList:
         return [self.agents[i] for i in self.rank[-k:]]
 
     def pick_random(self, k: int = None, replace: bool = False, exclude: List[int] = None)->Union[Agent,AgentList]:
@@ -101,14 +101,14 @@ class SwarmContext(ISwarmContext):
     def best(self)->Reference:
         return Reference(self.info.best())
     
-    def worse(self)->Reference:
-        return Reference(self.info.worse())
+    def worst(self)->Reference:
+        return Reference(self.info.worst())
     
     def k_best(self, size: int)->References:
         return References.of(self.info.k_best(size))
 
-    def k_worse(self, size: int)->References:
-        return References.of(self.info.k_worse(size))
+    def k_worst(self, size: int)->References:
+        return References.of(self.info.k_worst(size))
     
     def filter(self, f: Callable[[Agent], bool])->References: 
         return References.of(self.info.filter(f))

@@ -164,7 +164,7 @@ grammar = """
         | "min"i "(" math_expr ")" -> min
         | "max"i "(" math_expr ")" -> max
         | "avg"i "(" math_expr ("," math_expr)? ")" -> avg
-        | "diff"i "(" math_expr "," math_expr ")" -> diff
+        | "distance"i "(" math_expr "," math_expr ")" -> distance
         | "repeat"i "(" math_expr "," math_expr ")" -> repeat
         | func_expr
         | "count"i "(" math_expr ")" -> count

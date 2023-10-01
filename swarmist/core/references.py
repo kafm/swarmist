@@ -150,7 +150,7 @@ class References(IReferences):
         callback = self._get_key_callback(key)
         return max(self.refs, key=callback)
 
-    def diff(
+    def distance(
         self,
         other: Union[Reference, Pos, int, float],
         key: Union[str, Callable[[Reference], Pos]] = "best",
@@ -159,7 +159,7 @@ class References(IReferences):
         key_callback = self._get_key_callback(key)
         return [key_callback(ref.agent) - _other for ref in self.refs]
 
-    def reverse_diff(
+    def reverse_distance(
         self,
         other: Union[Reference, Pos, int, float],
         key: Union[str, Callable[[Reference], Pos]] = "best",
@@ -170,7 +170,7 @@ class References(IReferences):
 
     def _get_key_callback(
         self, key: Union[str, Callable[[Reference], Pos]]
-    ) -> Callable[[Agent | Reference], Union[Pos, Fit]]:
+    ) -> Callable[[Union[Agent, Reference]], Union[Pos, Fit]]:
         return lambda a: getattr(a, key) if isinstance(key, str) else key
 
     def size(self) -> int:
@@ -183,10 +183,10 @@ class SwarmMethods:
             return lambda ctx: ctx.swarm.best()
         return lambda ctx: ctx.swarm.k_best(size)
 
-    def worse(self, size: Optional[int] = None) -> Callable[[UpdateContext], Reference]:
+    def worst(self, size: Optional[int] = None) -> Callable[[UpdateContext], Reference]:
         if not size:
-            return lambda ctx: ctx.swarm.worse()
-        return lambda ctx: ctx.swarm.k_worse(size)
+            return lambda ctx: ctx.swarm.worst()
+        return lambda ctx: ctx.swarm.k_worst(size)
 
     def all(self) -> Callable[[UpdateContext], References]:
         return self.neighborhood()

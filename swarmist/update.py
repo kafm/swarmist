@@ -95,7 +95,7 @@ def filter(condition: Condition)->Callable[..., Selection]:
 #             lambda agents: min(agents, key=key)
 #       )
 
-PosHelperResult = IReference | IReferences | Pos
+PosHelperResult = Union[IReference, IReferences, Pos]
 PosHelper = Callable[[UpdateContext], PosHelperResult] 
 UpdateArgs = Dict[str, Union[PosHelper, Recombination, Condition]]
 

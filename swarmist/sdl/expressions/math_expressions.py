@@ -178,14 +178,14 @@ class MathExpressions(Expressions):
 
         return callback
 
-    def diff(self, left, right):
+    def distance(self, left, right):
         def callback(ctx=None):
             x = fetch_value(left, ctx)
             y = fetch_value(right, ctx)
-            if hasattr(x, "diff"):
-                return x.diff(y)
-            elif hasattr(x, "__len__"):
-                return [xi - y for xi in x]
+            if hasattr(x, "distance"):
+                return x.distance(y)
+            #elif hasattr(x, "__len__"):
+            #    return [xi - y for xi in x]
             else:
                 return x - y
 

@@ -64,17 +64,19 @@ class SearchExecutor:
         self._log_result(evaluation)
         return evaluation
 
-    def evolve(
-        self, population: Population
-    ) -> Either[Exception, SearchResults]:  # TODO find a cleaner way to do this
+    def evolve(self, population: Population) -> Either[Exception, SearchResults]:
+        population_results: List[List[Evaluation]] = []
         try:
             while self._next():
                 population.update(self.context())
+                population_results.append(
+                    [Evaluation(i.pos, i.fit) for i in population._agents]
+                )
         except Exception as e:
             if not isinstance(e, SearchEnded):
                 return Left(e)
             self._log_result(Evaluation(self.curr_pos, self.curr_fit))
-        return Right(self._results)
+        return Right(SearchResults(best=self._results, population=population_results))
 
     def _log_result(self, evaluation: Evaluation):
         if evaluation.fit <= self.curr_fit:

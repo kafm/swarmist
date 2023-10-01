@@ -18,6 +18,7 @@ def init_population(
 ) -> Either[Exception, Population]:
     return try_catch(lambda: Population(strategy=strategy, ctx=ctx))
 
+
 def do_search(
     strategy: SearchStrategy, evaluator: Evaluator, until: StopCondition
 ) -> Either[Exception, SearchResults]:
@@ -35,10 +36,15 @@ def do_search(
 def do_tune(
     strategy: TuneStrategy, evaluator: Evaluator, until: StopCondition
 ) -> Either[Exception, TuneResults]:
-    n_jobs = multiprocessing.cpu_count()
+    # n_jobs = (
+    #     None if strategy.num_jobs == None else strategy.num_jobs
+    # )
+    # print(f"Tunning with {n_jobs} jobs")
+    if strategy.num_jobs != None:
+        print(f"Tunning with {strategy.num_jobs} jobs")
     return Tune(
         strategy, partial(do_search, evaluator=evaluator, until=until)
-    ).optimize(jobs=n_jobs)
+    ).optimize(jobs=strategy.num_jobs)
 
 
 def do_tune_or_search(
@@ -79,10 +85,10 @@ def using(strategy: Strategy) -> Either[Exception, Callable[..., SearchStrategy]
 
 
 def tune(
-    strategy: Strategy, max_gen: int = 50
+    strategy: Strategy, max_gen: int = 50, num_jobs: Optional[int] = None
 ) -> Either[Exception, Callable[..., TuneStrategy]]:
     return lambda: strategy.get().then(
-        lambda st: Right(TuneStrategy(strategy=st, max_gen=max_gen))
+        lambda st: Right(TuneStrategy(strategy=st, max_gen=max_gen, num_jobs=num_jobs))
     )
 
 

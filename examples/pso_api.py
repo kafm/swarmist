@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import swarmist as sw
 
 problem, bounds = sw.benchmark.sphere()
@@ -32,4 +34,4 @@ res = sw.search(
     sw.until(max_gen=maxGenerations),
     sw.using(st),
 )
-print(f"res={min(res, key=lambda x: x.fit)}")
+print(res.best[-1])

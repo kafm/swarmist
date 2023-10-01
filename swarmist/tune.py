@@ -66,12 +66,15 @@ class Tune:
         res = self.search_callback(st)
         if res.is_left():
             raise cast(Exception, res.monoid[0])
-        return cast(SearchResults, res.value)[-1].fit
+        return cast(SearchResults, res.value).best[-1].fit
 
     def optimize(self, jobs: int = 1) -> Either[Exception, TuneResults]:
         study = optuna.create_study(direction="minimize")
         try:
-            study.optimize(self.objective, n_trials=self.strategy.max_gen, n_jobs=jobs)
+            kargs = {"n_trials":self.strategy.max_gen }
+            if jobs != None and jobs > 1:
+                kargs["n_jobs"] = jobs
+            study.optimize(self.objective, **kargs)
             trial = study.best_trial
             return Right(TuneResults(
                 fit=trial.value,

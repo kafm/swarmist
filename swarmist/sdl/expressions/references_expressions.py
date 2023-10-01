@@ -14,7 +14,7 @@ class ReferencesExpressions(Expressions):
         return swarm_methods.best(size)
 
     def swarm_worst(self, size=None):
-        return swarm_methods.worse(size)
+        return swarm_methods.worst(size)
 
     def swarm_all(self):
         return swarm_methods.all()

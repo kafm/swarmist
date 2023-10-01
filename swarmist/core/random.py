@@ -1,10 +1,10 @@
-from typing import  List
+from typing import  List, Union
 from dataclasses import dataclass
 import math
 import numpy as np
 import scipy.stats as ss
 
-OneOrMoreFloat = float | List[float]
+OneOrMoreFloat = Union[float, List[float]]
 
 @dataclass(frozen=True)
 class Random:

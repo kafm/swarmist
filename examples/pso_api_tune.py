@@ -1,11 +1,12 @@
+import os, sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import swarmist as sw
 import datetime
 
 problem, bounds = sw.benchmark.sphere()
-numDimensions = 20
-maxGenerations = 1000
-maxEvals = 100000
-populationSize = 40
+ndims = 20
+max_gen = 1000
+trials = 50
 
 st = sw.strategy()
 st.param("c1", value=sw.AutoFloat(min=0, max=4.1))
@@ -30,17 +31,14 @@ st.pipeline(
     .recombinant(sw.recombination.binomial(cr_probability=lambda ctx: ctx.param("cr"))),
 )
 
-
-
 start_time = datetime.datetime.now()
 
 res = sw.search(
-    sw.minimize(problem, bounds, dimensions=numDimensions),
-    sw.until(max_evals=maxEvals),
-    sw.tune(st, max_gen=100)
-    #sw.using(st),
+    sw.minimize(problem, bounds, dimensions=ndims),
+    sw.until(max_gen=max_gen),
+    sw.tune(st, max_gen=trials),
 )
 
 duration = (datetime.datetime.now() - start_time).total_seconds()
 print(f"End opt after {duration} seconds")
-print(f"res={res}")
+print(f"fit={res.fit}, params={res.parameters}")

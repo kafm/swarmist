@@ -11,13 +11,13 @@ L = TypeVar("L")
 KeyValue = Dict[K, V]
 Pos = List[float]
 Fit = float
-Number = float | int
+Number = Union[float, int]
 
 
 @dataclass(frozen=True)
 class Bounds:
-    min: float | List[float]
-    max: float | List[float]
+    min: Union[float, List[float]]
+    max: Union[float, List[float]]
 
 
 @dataclass(frozen=True)
@@ -62,7 +62,7 @@ class SearchContext(StrategyContext):
 
 FitnessFunction = Callable[[Pos], Fit]
 ConstraintChecker = Callable[[Pos], Fit]
-ConstraintValue = ConstraintChecker | Fit
+ConstraintValue = Union[ConstraintChecker, Fit]
 ConstraintsChecker = List[ConstraintChecker]
 
 
@@ -91,13 +91,13 @@ class AbstractInfo(Generic[L, T]):
     def best(self) -> T:
         raise NotImplementedError()
 
-    def worse(self) -> T:
+    def worst(self) -> T:
         raise NotImplementedError()
 
     def k_best(self, size: int) -> L:
         raise NotImplementedError()
 
-    def k_worse(self, size: int) -> L:
+    def k_worst(self, size: int) -> L:
         raise NotImplementedError()
 
     def filter(self, f: Callable[[T], bool]) -> L:
@@ -236,7 +236,7 @@ class IReferences:
     ) -> Pos:
         raise NotImplementedError()
 
-    def diff(
+    def distance(
         self,
         other: Union[IReference, Pos, int, float],
         key: Union[str, Callable[[IReference], Pos]] = "best",
@@ -244,7 +244,7 @@ class IReferences:
     ) -> Pos:
         raise NotImplementedError()
 
-    def reverse_diff(
+    def reverse_distance(
         self,
         other: Union[IReference, Pos, int, float],
         key: Union[str, Callable[[IReference], Pos]] = "best",
@@ -264,7 +264,7 @@ class PopulationInfo:
 PosGenerator = Callable[[SearchContext], Pos]
 StaticTopology = List[List[int]]
 DynamicTopology = Callable[[AgentList], StaticTopology]
-Topology = StaticTopology | DynamicTopology
+Topology = Union[StaticTopology, DynamicTopology]
 TopologyBuilder = Callable[[AgentList], Topology]
 
 
@@ -286,7 +286,7 @@ class AutoFloat(Auto[float]):
 
 @dataclass(frozen=True)
 class Initialization:
-    population_size: int | AutoInteger #| Callable[[SearchContext], int]
+    population_size: Union[int, AutoInteger]
     generate_pos: PosGenerationMethod
     topology: TopologyBuilder
 
@@ -305,7 +305,7 @@ class Parameter:
 @dataclass(frozen=True)
 class AutoParameter:
     name: str
-    value: AutoInteger | AutoFloat
+    value: Union[AutoInteger, AutoFloat]
 
 
 class Parameters:
@@ -401,9 +401,12 @@ class SearchStrategy:
 class TuneStrategy:
     strategy: SearchStrategy
     max_gen: int
+    num_jobs: Optional[int] = None
 
-
-SearchResults = List[Evaluation]
+@dataclass(frozen=True)
+class SearchResults:
+    best: List[Evaluation]
+    population: List[List[Evaluation]]
 
 
 @dataclass(frozen=True)
