@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="Swarmist",
-    version="0.0.01",
+    name="swarmist",
+    version="0.0.06",
     description="A DSL for building metaheuristics",
     author="Kevin Martins",
     url="https://github.com/kafm/swarmist",
@@ -27,5 +27,5 @@ setup(
     keywords=["swarmist", "metaheuristics", "optimization", "dsl"],
     packages=find_packages(),
     python_requires=">= 3.10",
-    install_requires=["numpy>=1.24.3", "scipy>=1.10.1", "lark>=1.1.5", "PyMonad>=2.4.0", "optuna>=3.2.0"],
+    install_requires=["numpy", "scipy>=1.10", "lark>=1.1", "PyMonad>=2.4", "optuna>=3.2"],
 )
