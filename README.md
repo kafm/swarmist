@@ -19,4 +19,8 @@ Swarmist supports Python 3.10 or newer.
 
 ## Documentation
 
-Coming soon...
+The full documentation can be found [here](https://github.com/kafm/swarmist/wiki).
+
+## License
+
+Swarmist is [MIT](https://github.com/kafm/swarmist/blob/main/LICENSE) licensed.
